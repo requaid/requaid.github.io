@@ -1,0 +1,72 @@
+html, body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	text-align: center;
+	align-items: center;
+}
+
+#body {
+	display: flex;
+	flex-direction: column;
+	background-color: darkolivegreen;
+	height: 100%;
+}
+
+#header {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	height: 5em;
+	background-color: aqua;
+}
+
+#speaker {
+	cursor: pointer;
+	margin: auto 1em;
+	width: 4em;
+	height: 4em;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-image: url('/src/img/sound.png');
+}
+
+#speaker.soundOff {
+	background-image: url('/src/img/noSound.png');
+}
+
+#submit {
+	cursor: pointer;
+	width: 11em;
+	height: 5em;
+	margin: auto 0;
+	background-color: blueviolet;
+}
+
+#main {
+	display: flex;
+	justify-content: space-between;
+	background-color: blue;
+	width: 900px;
+	min-width: 600px;
+	height: 800px;
+	margin: 0 auto;
+}
+
+#customArea {
+	display: block;
+	margin: auto;
+	height: 90%;
+	width: 90%;
+	background-color: rgba(180, 45, 45, 0.5);
+}
+
+/* 모바일 */
+@media (max-width:767px) and (max-width:1200px) {
+	#main {
+		max-width: 400px;
+		background-color: red;
+	}
+}
