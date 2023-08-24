@@ -1,37 +1,26 @@
-var bgm = new Audio("./src/sound/bgm.mp3");
-var AudioContext;
-var audioContext;
-bgmPlay();
-window.onload = function () {
-	navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
-		AudioContext = window.AudioContext || window.webkitAudioContext;
-		audioContext = new AudioContext();
-	}).catch(e => {
-		console.error(`Audio permissions denied: ${e}`);
-	});
-}
 
 // $(".draggable").draggable(); // 오브젝트 드래그 속성
 
-//bgm 재생
-function bgmPlay() {
-	bgm.muted = true;
-	bgm.loop = true;
-	bgm.autoplay = true;
-	// bgm.oncanplaythrough = bgm.play();
-	bgm.muted = false;
-	bgm.pause();
-	bgm.play();
-}
+
+
 function toggleBgm() {
+	var called_frame = parent.document.getElementById("bgm_frame").contentWindow;
 	var soundButton = document.getElementById('speaker');
+
 	if (soundButton.classList.contains('soundOff')) {
-		bgm.play();
+		called_frame.player.playVideo();
 	} else {
-		bgm.pause();
+		called_frame.player.pauseVideo();
 	}
 	soundButton.classList.toggle('soundOff');
+	if ($('html').hasClass('single')) {
+		return false;
+	} else {
+		return true;
+	}
 }
+
+
 
 // 완성 버튼
 function submitButton() {

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+	<meta charset="utf-8">
+</head>
+
+<body>
+
+	<div id="player"></div>
+
+	<script>
+		var tag = document.createElement('script');
+
+		tag.src = "https://www.youtube.com/iframe_api";
+		var firstScriptTag = document.getElementsByTagName('script')[0];
+		firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+		var player;
+
+		function loadPlaylist_playlist_id(list_id) {
+			player.loadPlaylist({
+				'list': list_id,		//이부분을 변수로 받아옴
+				'listType': 'playlist',
+				'index': 0,
+				'startSeconds': 0,
+				'suggestedQuality': 'small'
+			});
+		}
+
+		function onYouTubeIframeAPIReady() {
+			player = new YT.Player('player', {
+				height: '0',
+				width: '0',
+				videoId: ' ',
+				events: {
+					'onReady': onPlayerReady,
+					'onStateChange': onPlayerStateChange
+				}
+			});
+		}
+
+		function onPlayerReady(event) {
+
+			loadPlaylist_playlist_id('PLk7_c1gK2RvSgnXPUgOHfGq3KB9KKLF3z');
+			player.setLoop(true);
+			event.target.playVideo();
+
+		}
+
+
+		var done = false;
+		function onPlayerStateChange(event) {
+			if (event.data == YT.PlayerState.PLAYING && !done) {
+
+				done = true;
+			}
+		}
+		function stopVideo() {
+			player.stopVideo();
+		}
+
+
+	</script>
+
+</body>
+
+</html>
