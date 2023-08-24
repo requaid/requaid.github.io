@@ -15,11 +15,13 @@ bgmPlay();
 
 //bgm 재생
 function bgmPlay() {
-	bgm.autoplay = true;
-	bgm.loop = true;
 	bgm.muted = true;
+	bgm.loop = true;
+	bgm.autoplay = true;
 	// bgm.oncanplaythrough = bgm.play();
 	bgm.muted = false;
+	bgm.stop();
+	bgm.play();
 }
 function toggleBgm() {
 	var soundButton = document.getElementById('speaker');
