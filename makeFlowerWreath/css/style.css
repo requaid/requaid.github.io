@@ -30,11 +30,11 @@ html, body {
 	height: 4em;
 	background-repeat: no-repeat;
 	background-position: center;
-	background-image: url('/src/img/sound.png');
+	background-image: url('./src/img/sound.png');
 }
 
 #speaker.soundOff {
-	background-image: url('/src/img/noSound.png');
+	background-image: url('./src/img/noSound.png');
 }
 
 #submit {
