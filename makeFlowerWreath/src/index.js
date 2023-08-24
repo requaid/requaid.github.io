@@ -2,14 +2,14 @@ var bgm = new Audio("./src/sound/bgm.mp3");
 var AudioContext;
 var audioContext;
 bgmPlay();
-// window.onload = function () {
-// 	navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
-// 		AudioContext = window.AudioContext || window.webkitAudioContext;
-// 		audioContext = new AudioContext();
-// 	}).catch(e => {
-// 		console.error(`Audio permissions denied: ${e}`);
-// 	});
-// }
+window.onload = function () {
+	navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
+		AudioContext = window.AudioContext || window.webkitAudioContext;
+		audioContext = new AudioContext();
+	}).catch(e => {
+		console.error(`Audio permissions denied: ${e}`);
+	});
+}
 
 // $(".draggable").draggable(); // 오브젝트 드래그 속성
 
