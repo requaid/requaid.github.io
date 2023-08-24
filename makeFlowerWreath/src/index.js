@@ -1,6 +1,6 @@
 var bgm = new Audio("./src/sound/bgm.mp3");
 bgmPlay();
-$(".draggable").draggable(); // 오브젝트 드래그 속성
+// $(".draggable").draggable(); // 오브젝트 드래그 속성
 
 //bgm 재생
 function bgmPlay() {
