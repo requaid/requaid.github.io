@@ -15,9 +15,10 @@ bgmPlay();
 
 //bgm 재생
 function bgmPlay() {
+	bgm.autoplay = true;
 	bgm.loop = true;
 	bgm.muted = true;
-	bgm.oncanplaythrough = bgm.play();
+	// bgm.oncanplaythrough = bgm.play();
 	bgm.muted = false;
 }
 function toggleBgm() {
