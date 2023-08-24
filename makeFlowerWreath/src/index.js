@@ -20,7 +20,7 @@ function bgmPlay() {
 	bgm.autoplay = true;
 	// bgm.oncanplaythrough = bgm.play();
 	bgm.muted = false;
-	bgm.stop();
+	bgm.pause();
 	bgm.play();
 }
 function toggleBgm() {
