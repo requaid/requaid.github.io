@@ -6,21 +6,27 @@ html, body {
 	overflow: hidden;
 	text-align: center;
 	align-items: center;
+	display: block;
+	background: url('/src/img/background.png') no-repeat center;
 }
 
-#body {
-	display: flex;
-	flex-direction: column;
-	background-color: darkolivegreen;
-	height: 100%;
+::-webkit-scrollbar-track,
+::-webkit-scrollbar {
+	background-color: transparent;
 }
+
+::-webkit-scrollbar-thumb {
+	background-color: #FFFFFF;
+	border-radius: 10px;
+}
+
 
 #header {
 	display: flex;
 	justify-content: space-between;
 	width: 100%;
-	height: 5em;
-	background-color: aqua;
+	height: 100px;
+	background-color: rgba(255, 255, 255, 0.1);
 }
 
 #speaker {
@@ -38,17 +44,65 @@ html, body {
 }
 
 #submit {
-	cursor: pointer;
-	width: 11em;
+	margin: 0 1em;
+	width: 200px;
+	height: 100px;
+	background: url('/src/img/submit.png') no-repeat center right;
+}
+
+#menu {
+	position: absolute;
+	width: 100%;
+	height: 20em;
+	background-color: rgba(0, 0, 0, 0.5);
+}
+
+#selectArea {
+	display: flex;
+	justify-content: space-between;
+	margin: auto;
+	width: 100%;
+	height: 100%;
+}
+
+#colorPicker {
+	display: inline;
+	margin: 0 1em;
+	width: 30%;
+	height: 100%;
+	overflow: auto;
+	/* background-color: brown; */
+}
+
+#flowerPicker {
+	display: inline;
+	margin: 0 1em;
+	width: 70%;
+	height: 100%;
+	overflow-y: scroll;
+	/* background-color: brown; */
+}
+
+.popButton {
+	background-color: rgba(0, 0, 0, 0.5);
+	border-radius: 0 0 50px 50px;
+	margin: 0 auto;
 	height: 5em;
-	margin: auto 0;
-	background-color: blueviolet;
+	width: 10em;
+	color: #FFFFFF;
+}
+
+
+#body {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
 }
 
 #main {
 	display: flex;
 	justify-content: space-between;
-	background-color: blue;
+	/* background-color: rgba(255, 255, 255, 0.1); */
 	width: 900px;
 	min-width: 600px;
 	height: 800px;
@@ -57,16 +111,60 @@ html, body {
 
 #customArea {
 	display: block;
-	margin: auto;
-	height: 90%;
-	width: 90%;
-	background-color: rgba(180, 45, 45, 0.5);
+	margin: 4em auto;
+	width: 600px;
+	height: 600px;
+	background-color: rgba(255, 255, 255, 0.4);
+}
+
+#footer {
+	display: flex;
+	position: absolute;
+	bottom: 0;
+	align-items: center;
+	height: 100px;
+	width: 100%;
+}
+
+#reset {
+	background: url('/src/img/reset.png') no-repeat;
+	margin: 0 1em;
+	width: 200px;
+	height: 100px;
+}
+
+.active {}
+
+.disable {
+	display: none;
 }
 
 /* 모바일 */
 @media (max-width:767px) and (max-width:1200px) {
-	#main {
-		max-width: 400px;
-		background-color: red;
+	#menu {
+		height: 70%;
 	}
+
+	#selectArea {
+		flex-direction: column;
+		justify-content: center;
+	}
+
+	#colorPicker {
+		margin: 0;
+		width: 100%;
+		height: 8em;
+		overflow-x: scroll;
+	}
+
+	#flowerPicker {
+		margin: 0.5em 0 0;
+		width: 100%;
+	}
+
+	#main {
+		max-width: 600px;
+		background-color: rgba(255, 0, 0, 0.3);
+	}
+
 }
