@@ -23,11 +23,19 @@ function toggleBgm() {
 function exitNotice() {
 	var notice = document.getElementById('notice');
 	called_frame.player.playVideo();
-	soundButton.classList.add('disable');
+	notice.classList.add('disable');
 }
 
+
+// 메뉴 버튼
+function toggleMenu() {
+	var menuBtn = document.getElementById('menuBtn');
+	var selectArea = document.getElementById('selectArea');
+	menuBtn.classList.toggle('active');
+	selectArea.classList.toggle('disable');
+}
 // 완성 버튼
-function submitButton() {
+function submitBtn() {
 	soundCall();
 }
 function soundCall() {

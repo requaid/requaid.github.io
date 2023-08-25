@@ -50,10 +50,11 @@ html, body {
 }
 
 #submit {
-	padding: 0 1em;
+	display: flex;
+	margin: auto 1em;
 	width: 150px;
 	height: 63px;
-	background: url('../src/img/submit.png') no-repeat center right;
+	/* background: url('../src/img/submit.png') no-repeat center right; */
 }
 
 #menu {
@@ -91,7 +92,7 @@ html, body {
 	/* background-color: brown; */
 }
 
-#popButton {
+#popBtn {
 	display: flex;
 	background-color: rgba(0, 0, 0, 0.5);
 	border-radius: 0 0 50px 50px;
@@ -101,7 +102,7 @@ html, body {
 	color: #FFFFFF;
 }
 
-#popButton img {
+#popBtn img {
 	margin: auto;
 	height: 30px;
 	width: 30px;
@@ -111,7 +112,6 @@ html, body {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
-	margin-top: ;
 }
 
 #main {
@@ -153,8 +153,7 @@ html, body {
 }
 
 #reset {
-	background: url('../src/img/reset.png') no-repeat;
-	padding: 0 1em;
+	margin: auto 1em;
 	width: 200px;
 	height: 100px;
 }
@@ -198,7 +197,7 @@ html, body {
 
 	#main {
 		max-width: 400px;
-		max-height: 600px;
+		max-height: 400px;
 		overflow-x: scroll;
 		overflow-y: hidden;
 	}
@@ -206,7 +205,7 @@ html, body {
 	#footer {
 		margin-left: 10px;
 		height: 30px;
-		bottom: 0;
+		bottom: 3em;
 	}
 }
 

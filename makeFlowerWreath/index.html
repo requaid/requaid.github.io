@@ -5,7 +5,7 @@
         <meta content="yes" name="apple-mobile-web-app-capable" />
         <meta
             name="viewport"
-            content="width=device-width, initial-scale=1.0, user-scalable=0;"
+            content="width=device-width, initial-scale=1.0, user-scalable=0.9;"
         />
         <title>테스트페이지</title>
         <link rel="stylesheet" href="./css/style.css" />
@@ -255,15 +255,17 @@
                 ></iframe>
             </div>
             <div id="speaker" class="" onclick="toggleBgm()"></div>
-            <div id="submit" onclick="submitButton()"></div>
+            <div id="submit">
+                <img src="./src/img/submit.png" onclick="submitBtn()" />
+            </div>
         </div>
         <div id="menu">
             <div id="selectArea" class="disable">
                 <div id="colorPicker">색상 선택</div>
                 <div id="flowerPicker">꽃 선택</div>
             </div>
-            <div id="menuButton">
-                <div id="popButton" class="pointer">
+            <div id="menuBtn" onclick="toggleMenu()">
+                <div id="popBtn" class="pointer">
                     <img class="pointer" src="./src/img/flower.png" />
                 </div>
             </div>
@@ -274,7 +276,9 @@
                 <div id="customArea">화관자리</div>
             </div>
             <div id="footer">
-                <div id="reset"></div>
+                <div id="reset">
+                    <img src="./src/img/reset.png" onclick="resetBtn()" />
+                </div>
             </div>
         </div>
 
