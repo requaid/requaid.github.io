@@ -206,6 +206,7 @@ html, body {
 	#footer {
 		margin-left: 10px;
 		height: 30px;
+		bottom: 0;
 	}
 }
 
