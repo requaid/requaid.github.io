@@ -7,7 +7,7 @@ html, body {
 	text-align: center;
 	align-items: center;
 	display: block;
-	background: url('/src/img/background.png') no-repeat center;
+	background: url('../src/img/background.png') no-repeat center;
 }
 
 ::-webkit-scrollbar-track,
@@ -20,6 +20,7 @@ html, body {
 	border-radius: 10px;
 }
 
+#notice {}
 
 #header {
 	display: flex;
@@ -47,7 +48,7 @@ html, body {
 	margin: 0 1em;
 	width: 200px;
 	height: 100px;
-	background: url('/src/img/submit.png') no-repeat center right;
+	background: url('../src/img/submit.png') no-repeat center right;
 }
 
 #menu {
@@ -127,7 +128,7 @@ html, body {
 }
 
 #reset {
-	background: url('/src/img/reset.png') no-repeat;
+	background: url('../src/img/reset.png') no-repeat;
 	margin: 0 1em;
 	width: 200px;
 	height: 100px;

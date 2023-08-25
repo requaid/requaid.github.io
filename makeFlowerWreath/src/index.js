@@ -20,7 +20,11 @@ function toggleBgm() {
 	}
 }
 
-
+function exitNotice() {
+	var notice = document.getElementById('notice');
+	called_frame.player.playVideo();
+	soundButton.classList.add('disable');
+}
 
 // 완성 버튼
 function submitButton() {
