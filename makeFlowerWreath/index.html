@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=0.5" />
         <title>테스트페이지</title>
         <link rel="stylesheet" href="./css/style.css" />
         <script type="text/javascript">
@@ -253,22 +253,20 @@
             <div id="speaker" class="" onclick="toggleBgm()"></div>
             <div id="submit" onclick="submitButton()"></div>
         </div>
-        <div id="menu" class="disable">
-            <div id="selectArea">
+        <div id="menu">
+            <div id="selectArea" class="disable">
                 <div id="colorPicker">색상 선택</div>
                 <div id="flowerPicker">꽃 선택</div>
             </div>
-            <div>
-                <div id="open" class="popButton">
-                    <img src="./src/img/arrow-down.png" />
-                </div>
-                <div id="close" class="popButton disable">
-                    <img src="./src/img/arrow-up.png" />
+            <div id="menuButton">
+                <div id="popButton" class="pointer">
+                    <img class="pointer" src="./src/img/flower.png" />
                 </div>
             </div>
         </div>
         <div id="body">
             <div id="main">
+                <div id="basicFrame"></div>
                 <div id="customArea">화관자리</div>
             </div>
             <div id="footer">

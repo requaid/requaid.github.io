@@ -1,3 +1,8 @@
+* {
+	cursor: url(https://cur.cursors-4u.net/games/gam-4/gam308.cur),
+		auto;
+}
+
 html, body {
 	width: 100%;
 	height: 100%;
@@ -52,13 +57,15 @@ html, body {
 }
 
 #menu {
+	z-index: 9999;
 	position: absolute;
 	width: 100%;
 	height: 20em;
-	background-color: rgba(0, 0, 0, 0.5);
 }
 
 #selectArea {
+	background-color: rgba(0, 0, 0, 0.5);
+
 	display: flex;
 	justify-content: space-between;
 	margin: auto;
@@ -84,25 +91,32 @@ html, body {
 	/* background-color: brown; */
 }
 
-.popButton {
+#popButton {
+	display: flex;
 	background-color: rgba(0, 0, 0, 0.5);
 	border-radius: 0 0 50px 50px;
 	margin: 0 auto;
-	height: 5em;
-	width: 10em;
+	height: 50px;
+	width: 70px;
 	color: #FFFFFF;
 }
 
+#popButton img {
+	margin: auto;
+	height: 30px;
+	width: 30px;
+}
 
 #body {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	margin-top: ;
 }
 
 #main {
 	display: flex;
-	justify-content: space-between;
+	justify-content: center;
 	/* background-color: rgba(255, 255, 255, 0.1); */
 	width: 900px;
 	min-width: 600px;
@@ -110,13 +124,24 @@ html, body {
 	margin: 0 auto;
 }
 
-#customArea {
+#basicFrame {
 	display: block;
+	position: absolute;
 	margin: 4em auto;
 	width: 600px;
 	height: 600px;
 	background-color: rgba(255, 255, 255, 0.4);
 }
+
+#customArea {
+	display: block;
+	position: absolute;
+	margin: 4em auto;
+	width: 600px;
+	height: 600px;
+	background-color: rgba(255, 255, 255, 0.4);
+}
+
 
 #footer {
 	display: flex;
@@ -137,7 +162,15 @@ html, body {
 .active {}
 
 .disable {
-	display: none;
+	display: none !important;
+}
+
+.pointer {
+	cursor: pointer;
+}
+
+.grab {
+	cursor: pointer !important;
 }
 
 /* 모바일 */
@@ -165,6 +198,7 @@ html, body {
 
 	#main {
 		max-width: 600px;
+		max-height: 700px;
 		background-color: rgba(255, 0, 0, 0.3);
 	}
 
