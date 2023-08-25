@@ -34,6 +34,21 @@ function toggleMenu() {
 	menuBtn.classList.toggle('active');
 	selectArea.classList.toggle('disable');
 }
+
+// 메뉴 전환
+function selectMenu(target) {
+	var ulList = document.querySelectorAll('#flowerPicker ul');
+	var targetMenu = document.getElementById(target);
+	for (var i of ulList) {
+		if (!i.classList.contains('disable')) {
+			i.classList.toggle('disable')
+		}
+	}
+	if (targetMenu.classList.contains('disable')) {
+		targetMenu.classList.remove('disable');
+	}
+}
+
 // 완성 버튼
 function submitBtn() {
 	soundCall();
