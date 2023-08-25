@@ -12,7 +12,7 @@ html, body {
 	text-align: center;
 	align-items: center;
 	display: block;
-	background: url('../src/img/background.png') no-repeat center;
+	background: url('../src/img/background-l.png') no-repeat center;
 }
 
 ::-webkit-scrollbar-track,
@@ -50,9 +50,9 @@ html, body {
 }
 
 #submit {
-	margin: 0 1em;
-	width: 200px;
-	height: 100px;
+	padding: 0 1em;
+	width: 150px;
+	height: 63px;
 	background: url('../src/img/submit.png') no-repeat center right;
 }
 
@@ -154,7 +154,7 @@ html, body {
 
 #reset {
 	background: url('../src/img/reset.png') no-repeat;
-	margin: 0 1em;
+	padding: 0 1em;
 	width: 200px;
 	height: 100px;
 }
@@ -174,7 +174,43 @@ html, body {
 }
 
 /* 모바일 */
-@media (max-width:767px) and (max-width:1200px) {
+@media (max-width: 767px) {
+	#menu {
+		height: 70%;
+	}
+
+	#selectArea {
+		flex-direction: column;
+		justify-content: center;
+	}
+
+	#colorPicker {
+		margin: 0;
+		width: 100%;
+		height: 8em;
+		overflow-x: scroll;
+	}
+
+	#flowerPicker {
+		margin: 0.5em 0 0;
+		width: 100%;
+	}
+
+	#main {
+		max-width: 400px;
+		max-height: 600px;
+		overflow-x: scroll;
+		overflow-y: hidden;
+	}
+
+	#footer {
+		margin-left: 10px;
+		height: 30px;
+	}
+}
+
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+
 	#menu {
 		height: 70%;
 	}
@@ -199,7 +235,8 @@ html, body {
 	#main {
 		max-width: 600px;
 		max-height: 700px;
-		background-color: rgba(255, 0, 0, 0.3);
+		overflow-x: scroll;
+		overflow-y: hidden;
 	}
 
 }
