@@ -261,9 +261,49 @@
                 </div>
             </div>
             <div id="menu">
-                <div id="selectArea" class="disable">
-                    <div id="colorPicker">색상 선택</div>
-                    <div id="flowerPicker">꽃 선택</div>
+                <div id="selectArea" class="">
+                    <div id="colorPicker">
+                        <ul>
+                            <li onclick=""><img src="./src/img/base.png" /></li>
+                            <li onclick="">
+                                <img src="./src/img/ribbon.png" />
+                            </li>
+                            <li onclick=""><img src="./src/img/leaf.png" /></li>
+                            <li onclick="">
+                                <img src="./src/img/black.png" />
+                            </li>
+                            <li onclick="">
+                                <img src="./src/img/white.png" />
+                            </li>
+                            <li onclick=""><img src="./src/img/red.png" /></li>
+                            <li onclick=""><img src="./src/img/pink.png" /></li>
+                            <li onclick="">
+                                <img src="./src/img/yellow.png" />
+                            </li>
+                            <li onclick="">
+                                <img src="./src/img/green.png" />
+                            </li>
+                            <li onclick=""><img src="./src/img/blue.png" /></li>
+                            <li onclick="">
+                                <img src="./src/img/violet.png" />
+                            </li>
+                        </ul>
+                    </div>
+                    <div id="flowerPicker">
+                        <ul id="base" class="">
+                            <li>베이스</li>
+                            <ul>
+                                <li>덩쿨</li>
+                                <li>가지</li>
+                                <li>가시</li>
+                            </ul>
+                        </ul>
+                        <ul id="base" class="disable">
+                            <li>덩쿨</li>
+                            <li>가지</li>
+                            <li>가시</li>
+                        </ul>
+                    </div>
                 </div>
                 <div id="menuBtn" onclick="toggleMenu()">
                     <div id="popBtn" class="pointer">
