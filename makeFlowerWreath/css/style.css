@@ -19,7 +19,6 @@ html, body {
 
 ul {
 	text-align: center;
-	margin: 0;
 }
 
 li {
@@ -60,11 +59,11 @@ li {
 	height: 4em;
 	background-repeat: no-repeat;
 	background-position: center;
-	background-image: url('../src/img/sound.png');
+	background-image: url('../src/img/button/sound.png');
 }
 
 #speaker.soundOff {
-	background-image: url('../src/img/noSound.png');
+	background-image: url('../src/img/button/noSound.png');
 }
 
 #submit {
@@ -76,20 +75,17 @@ li {
 }
 
 #menu {
-	z-index: 9999;
+	z-index: 10;
 	position: absolute;
 	width: 100%;
-	height: 20em;
 	margin: 0 auto;
 }
 
-#selectArea {
 
+#selectArea {
 	display: flex;
 	justify-content: space-between;
 	margin: auto;
-	width: 100%;
-	height: 100%;
 }
 
 #colorPicker {
@@ -97,7 +93,6 @@ li {
 	display: inline;
 	margin: 0 0.5em;
 	width: 300px;
-	height: 100%;
 	overflow: auto;
 }
 
@@ -106,10 +101,13 @@ li {
 	display: inline;
 	margin: 0 0.5em;
 	width: calc(100% - 305px);
-	height: 100%;
 	overflow-y: scroll;
 	font-size: xx-large;
 	padding: 0;
+}
+
+#flowerPicker ul {
+	margin: 0;
 }
 
 #flowerPicker ul li {
@@ -162,6 +160,15 @@ li {
 	background-color: rgba(255, 255, 255, 0.4);
 }
 
+#AreaBorder {
+	display: block;
+	position: absolute;
+	margin: 4em auto;
+	width: 600px;
+	height: 600px;
+	/* background-color: rgba(255, 255, 255, 0.4); */
+}
+
 #customArea {
 	display: block;
 	position: absolute;
@@ -187,7 +194,26 @@ li {
 	height: 100px;
 }
 
+.flower {
+	display: flex;
+	position: absolute;
+	align-items: center;
+	justify-content: center;
+	width: 100px;
+	height: 100px;
+	z-index: 9;
+}
+
+.flower img {
+	width: 100px;
+	height: 100px;
+}
+
+.draggable {}
+
 .active {}
+
+
 
 .disable {
 	display: none !important;
@@ -204,7 +230,6 @@ li {
 /* 모바일 */
 @media (max-width: 767px) {
 	#menu {
-		height: calc(70%);
 		margin: 0 auto;
 	}
 
@@ -218,7 +243,6 @@ li {
 		white-space: nowrap;
 		margin: 0;
 		width: 100%;
-		height: 230px;
 	}
 
 	#flowerPicker {
@@ -274,7 +298,6 @@ li {
 	#colorPicker {
 		margin: 0;
 		width: 100%;
-		height: 8em;
 		overflow-x: scroll;
 	}
 
