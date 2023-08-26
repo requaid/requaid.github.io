@@ -27,11 +27,10 @@ function exitNotice() {
 
 // 메뉴 버튼
 function toggleMenu() {
-	var popBtn = document.getElementById('popBtn');
+	var menu = document.getElementById('menu');
 	var selectArea = document.getElementById('selectArea');
-	popBtn.classList.toggle('active');
+	menu.classList.toggle('active');
 	selectArea.classList.toggle('disable');
-	selectArea.classList.toggle('active');
 }
 
 // 메뉴 전환
