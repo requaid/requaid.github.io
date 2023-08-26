@@ -257,45 +257,51 @@
                 </div>
                 <div id="speaker" class="" onclick="toggleBgm()"></div>
                 <div id="submit">
-                    <img src="./src/img/submit.png" onclick="submitBtn()" />
+                    <img
+                        src="./src/img/button/submit.png"
+                        onclick="submitBtn()"
+                    />
                 </div>
             </div>
             <div id="menu">
-                <div id="selectArea" class="disable">
+                <div id="selectArea" class="">
                     <div id="colorPicker">
                         <ul>
                             <li onclick="selectMenu('base')">
-                                <img src="./src/img/base.png" />
+                                <img src="./src/img/button/base.png" />
                             </li>
                             <li onclick="selectMenu('ribbon')">
-                                <img src="./src/img/ribbon.png" />
+                                <img src="./src/img/button/ribbon.png" />
                             </li>
                             <li onclick="selectMenu('leaf')">
-                                <img src="./src/img/leaf.png" />
+                                <img src="./src/img/button/leaf.png" />
                             </li>
                             <li onclick="selectMenu('black')">
-                                <img src="./src/img/black.png" />
+                                <img src="./src/img/button/black.png" />
                             </li>
                             <li onclick="selectMenu('white')">
-                                <img src="./src/img/white.png" />
+                                <img src="./src/img/button/white.png" />
                             </li>
                             <li onclick="selectMenu('red')">
-                                <img src="./src/img/red.png" />
+                                <img src="./src/img/button/red.png" />
                             </li>
                             <li onclick="selectMenu('pink')">
-                                <img src="./src/img/pink.png" />
+                                <img src="./src/img/button/pink.png" />
+                            </li>
+                            <li onclick="selectMenu('orange')">
+                                <img src="./src/img/button/orange.png" />
                             </li>
                             <li onclick="selectMenu('yellow')">
-                                <img src="./src/img/yellow.png" />
+                                <img src="./src/img/button/yellow.png" />
                             </li>
                             <li onclick="selectMenu('green')">
-                                <img src="./src/img/green.png" />
+                                <img src="./src/img/button/green.png" />
                             </li>
                             <li onclick="selectMenu('blue')">
-                                <img src="./src/img/blue.png" />
+                                <img src="./src/img/button/blue.png" />
                             </li>
                             <li onclick="selectMenu('violet')">
-                                <img src="./src/img/violet.png" />
+                                <img src="./src/img/button/violet.png" />
                             </li>
                         </ul>
                     </div>
@@ -317,55 +323,92 @@
                             <li>보라</li>
                         </ul>
                         <ul id="leaf" class="disable">
+                            <li>노란 단풍</li>
+                            <li>빨간 단풍</li>
                             <li>얇은 잎</li>
                             <li>작은 잎</li>
                             <li>넓은 잎</li>
                         </ul>
                         <ul id="black" class="disable">
-                            <li>검정1</li>
-                            <li>검정2</li>
-                            <li>검정3</li>
+                            <li onclick="getObj('11_1')">
+                                <img src="./src/img/flower/11_1.png" />
+                            </li>
+                            <li onclick="getObj('11_2')">
+                                <img src="./src/img/flower/11_2.png" />
+                            </li>
                         </ul>
                         <ul id="white" class="disable">
-                            <li>하양1</li>
-                            <li>하양2</li>
-                            <li>하양3</li>
+                            <li onclick="getObj('21_1')">
+                                <img src="./src/img/flower/21_1.png" />
+                            </li>
+                            <li onclick="getObj('21_2')">
+                                <img src="./src/img/flower/21_2.png" />
+                            </li>
                         </ul>
                         <ul id="red" class="disable">
-                            <li>빨강1</li>
-                            <li>빨강2</li>
-                            <li>빨강3</li>
+                            <li onclick="getObj('31_1')">
+                                <img src="./src/img/flower/31_1.png" />
+                            </li>
+                            <li onclick="getObj('31_2')">
+                                <img src="./src/img/flower/31_2.png" />
+                            </li>
                         </ul>
                         <ul id="pink" class="disable">
-                            <li>분홍1</li>
-                            <li>분홍2</li>
-                            <li>분홍3</li>
+                            <li onclick="getObj('41_1')">
+                                <img src="./src/img/flower/41_1.png" />
+                            </li>
+                            <li onclick="getObj('41_2')">
+                                <img src="./src/img/flower/41_2.png" />
+                            </li>
+                        </ul>
+                        <ul id="orange" class="disable">
+                            <li onclick="getObj('51_1')">
+                                <img src="./src/img/flower/51_1.png" />
+                            </li>
+                            <li onclick="getObj('51_2')">
+                                <img src="./src/img/flower/51_2.png" />
+                            </li>
                         </ul>
                         <ul id="yellow" class="disable">
-                            <li>노랑1</li>
-                            <li>노랑2</li>
-                            <li>노랑3</li>
+                            <li onclick="getObj('61_1')">
+                                <img src="./src/img/flower/61_1.png" />
+                            </li>
+                            <li onclick="getObj('61_2')">
+                                <img src="./src/img/flower/61_2.png" />
+                            </li>
                         </ul>
                         <ul id="green" class="disable">
-                            <li>초록1</li>
-                            <li>초록2</li>
-                            <li>초록3</li>
+                            <li onclick="getObj('71_1')">
+                                <img src="./src/img/flower/71_1.png" />
+                            </li>
+                            <li onclick="getObj('71_2')">
+                                <img src="./src/img/flower/71_2.png" />
+                            </li>
                         </ul>
                         <ul id="blue" class="disable">
-                            <li>파랑1</li>
-                            <li>파랑2</li>
-                            <li>파랑3</li>
+                            <li onclick="getObj('81_1')">
+                                <img src="./src/img/flower/81_1.png" />
+                            </li>
+                            <li onclick="getObj('81_2')">
+                                <img src="./src/img/flower/81_2.png" />
+                            </li>
                         </ul>
                         <ul id="violet" class="disable">
-                            <li>보라1</li>
-                            <li>보라2</li>
-                            <li>보라3</li>
+                            <li onclick="getObj('91_1')">
+                                <img src="./src/img/flower/91_1.png" />
+                            </li>
+                            <li onclick="getObj('91_2')">
+                                <img src="./src/img/flower/91_2.png" />
+                            </li>
                         </ul>
                     </div>
                 </div>
                 <div id="menuBtn" onclick="toggleMenu()">
                     <div id="popBtn" class="pointer">
-                        <img class="pointer" src="./src/img/flower.png" />
+                        <img
+                            class="pointer"
+                            src="./src/img/button/flower.png"
+                        />
                     </div>
                 </div>
             </div>
@@ -376,7 +419,10 @@
                 </div>
                 <div id="footer">
                     <div id="reset">
-                        <img src="./src/img/reset.png" onclick="resetBtn()" />
+                        <img
+                            src="./src/img/button/reset.png"
+                            onclick="resetBtn()"
+                        />
                     </div>
                 </div>
             </div>
