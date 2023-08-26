@@ -259,6 +259,7 @@ li {
 	#selectArea {
 		flex-direction: column;
 		justify-content: center;
+		max-height: 600px;
 	}
 
 	#colorPicker {
@@ -341,7 +342,5 @@ li {
 	#main {
 		max-width: 600px;
 		max-height: 700px;
-		overflow-x: scroll;
-		overflow-y: hidden;
 	}
 }

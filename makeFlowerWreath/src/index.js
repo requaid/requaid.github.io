@@ -1,5 +1,22 @@
 window.onload(getBeforeWork());
+ribbonList();
 
+function ribbonList() {
+	var ribbonSection = document.getElementById('ribbon');
+	var x = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+	var y = ['1', '2', '3', '4', '5', '6', '7'];
+	for (var i of x) {
+		for (var j of y) {
+			var newObj = document.createElement('li');
+			var objIdNo = i + j;
+			var ribbonFn = "getFlowerObj('" + objIdNo + "', 'ribbon')";
+			var imgSrc = '<img src ="./src/img/ribbon/' + objIdNo + '.png" />';
+			newObj.setAttribute('onclick', ribbonFn);
+			newObj.innerHTML = imgSrc;
+			ribbonSection.append(newObj);
+		}
+	}
+}
 function getBeforeWork() {
 	var printSection = document.getElementById('printSection');
 	var preWork = window.localStorage.getItem('makeFlowerWreath');
