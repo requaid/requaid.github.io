@@ -75,7 +75,7 @@ li {
 }
 
 #menu {
-	z-index: 10;
+	z-index: 1;
 	position: absolute;
 	width: 100%;
 	margin: 0 auto;
@@ -201,7 +201,7 @@ li {
 	justify-content: center;
 	width: 100px;
 	height: 100px;
-	z-index: 9;
+	z-index: 100;
 }
 
 .flower img {
@@ -209,9 +209,9 @@ li {
 	height: 100px;
 }
 
-.draggable {}
-
-.active {}
+.active {
+	z-index: 999;
+}
 
 
 

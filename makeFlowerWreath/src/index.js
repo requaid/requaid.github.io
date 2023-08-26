@@ -1,3 +1,4 @@
+
 // 브금 온오프
 function toggleBgm() {
 	var called_frame = parent.document.getElementById("bgm_frame").contentWindow;
@@ -26,10 +27,11 @@ function exitNotice() {
 
 // 메뉴 버튼
 function toggleMenu() {
-	var menu = document.getElementById('menu');
+	var popBtn = document.getElementById('popBtn');
 	var selectArea = document.getElementById('selectArea');
-	menu.classList.toggle('active');
+	popBtn.classList.toggle('active');
 	selectArea.classList.toggle('disable');
+	selectArea.classList.toggle('active');
 }
 
 // 메뉴 전환
@@ -57,6 +59,7 @@ function getFlowerObj(id) {
 	newObj.classList.add('pointer');
 	newObj.innerHTML = divSrc;
 	customArea.append(newObj);
+	$(".draggable").draggable();
 }
 
 // 완성 버튼
@@ -67,71 +70,3 @@ function soundCall() {
 	var submitSound = new Audio("./src/sound/shining.mp3");
 	submitSound.play();
 }
-
-
-// 오브젝트 이동
-function MouseDown(event) {
-	event.preventDefault();
-
-	const el = event.flower;
-	const classList = el.classList;
-
-	if (!classList.contains("hold")) {
-		const mouseX = event.clientX;
-		const mouseY = event.clientY;
-
-		const targetPos = el.getBoundingClientRect();
-		const targetX = targetPos.x;
-		const targetY = targetPos.y;
-
-		/*타겟의 left, top이 그저 마우스의 좌표로 이동하게 된다면 어떻게 될지 상상해보라.*/
-		const gapX = mouseX - targetX;
-		const gapY = mouseY - targetY;
-
-		el.setAttribute("gap-x", gapX);
-		el.setAttribute("gap-y", gapY);
-
-		/*수많은 target 중 클릭의 타겟이 된 하나의 target에 hold 클라스 부여함*/
-		classList.add("hold");
-	}
-}
-
-function MouseMove(event) {
-	event.preventDefault();
-
-	const el = document.querySelector(".flower.hold");
-	if (el) {
-		const mouseX = event.clientX;
-		const mouseY = event.clientY;
-
-		const gapX = el.getAttribute("gap-x");
-		const gapY = el.getAttribute("gap-y");
-
-		const targetX = mouseX - gapX;
-		const targetY = mouseY - gapY;
-
-		el.style.left = targetX + "px";
-		el.style.top = targetY + "px";
-	}
-}
-
-function MouseUp(event) {
-	event.preventDefault();
-
-	const el = document.querySelector(".flower.hold");
-	el.removeAttribute("gap-x");
-	el.removeAttribute("gap-y");
-	el.classList.remove("hold");
-}
-
-$(document).ready(function () {
-	const targets = document.querySelectorAll(".flower");
-
-	targets.forEach(function (target, idx) {
-		target.addEventListener('mousedown', MouseDown);
-	});
-
-	document.addEventListener('mousemove', MouseMove);
-	document.addEventListener('mouseup', MouseUp);
-
-});
