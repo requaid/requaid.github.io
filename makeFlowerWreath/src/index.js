@@ -6,6 +6,7 @@ function getBeforeWork() {
 	if (preWork) {
 		printSection.innerHTML = preWork;
 	}
+	$(".draggable").draggable();
 }
 
 // 브금 온오프
@@ -58,22 +59,23 @@ function selectMenu(target) {
 
 // 베이스 변경
 function changeBaseObj(id) {
-
+	var basicFrame = document.getElementById('basicFrame');
+	basicFrame.classList.remove('base_vine', 'base_flower', 'base_branch', 'base_thorn');
+	basicFrame.classList.add(id);
+	saveCache();
 }
 
 // 오브젝트 생성
-function getFlowerObj(id) {
+function getFlowerObj(id, type) {
 	var idSeq = window.localStorage.getItem('makeFlowerWreathSeq') ? window.localStorage.getItem('makeFlowerWreathSeq') : 0;
-	var objId = 'flower' + idSeq;
+	var objId = 'object' + idSeq;
 	var customArea = document.getElementById('customArea');
 	var newObj = document.createElement('div');
-	var imgSrc = './src/img/flower/' + id + '.png';
+	var imgSrc = './src/img/' + type + '/' + id + '.png';
 	var divSrc = '<img src="' + imgSrc + '">';
 	newObj.setAttribute('id', objId);
 	newObj.setAttribute('onmouseup', 'saveCache()');
-	newObj.classList.add('flower');
-	newObj.classList.add('draggable');
-	newObj.classList.add('pointer');
+	newObj.classList.add('draggable', 'pointer', type);
 	newObj.innerHTML = divSrc;
 	customArea.append(newObj);
 	$(".draggable").draggable();
@@ -94,7 +96,10 @@ function submitBtn() {
 
 function soundCall() {
 	var submitSound = new Audio("./src/sound/shining.mp3");
+	submitSound.volume = 0.3;
 	submitSound.play();
+	// var savesound = new Audio("./src/sound/humming.mp3");
+	// savesound.play();
 }
 
 // 리셋 버튼
@@ -105,4 +110,6 @@ function resetBtn() {
 	}
 	window.localStorage.setItem('makeFlowerWreathSeq', 0);
 	window.localStorage.setItem('makeFlowerWreath', '');
+	var resetSound = new Audio("./src/sound/reset.mp3");
+	resetSound.play();
 }
