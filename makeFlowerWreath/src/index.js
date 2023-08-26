@@ -1,3 +1,12 @@
+window.onload(getBeforeWork());
+
+function getBeforeWork() {
+	var printSection = document.getElementById('printSection');
+	var preWork = window.localStorage.getItem('makeFlowerWreath');
+	if (preWork) {
+		printSection.innerHTML = preWork;
+	}
+}
 
 // 브금 온오프
 function toggleBgm() {
@@ -47,18 +56,35 @@ function selectMenu(target) {
 	}
 }
 
+// 베이스 변경
+function changeBaseObj(id) {
+
+}
+
 // 오브젝트 생성
 function getFlowerObj(id) {
+	var idSeq = window.localStorage.getItem('makeFlowerWreathSeq') ? window.localStorage.getItem('makeFlowerWreathSeq') : 0;
+	var objId = 'flower' + idSeq;
 	var customArea = document.getElementById('customArea');
 	var newObj = document.createElement('div');
 	var imgSrc = './src/img/flower/' + id + '.png';
 	var divSrc = '<img src="' + imgSrc + '">';
+	newObj.setAttribute('id', objId);
+	newObj.setAttribute('onmouseup', 'saveCache()');
 	newObj.classList.add('flower');
 	newObj.classList.add('draggable');
 	newObj.classList.add('pointer');
 	newObj.innerHTML = divSrc;
 	customArea.append(newObj);
 	$(".draggable").draggable();
+	window.localStorage.setItem('makeFlowerWreathSeq', ++idSeq);
+}
+
+// 작업물 저장
+function saveCache() {
+	var printSection = document.getElementById('printSection');
+	var work = printSection.innerHTML;
+	window.localStorage.setItem('makeFlowerWreath', work);
 }
 
 // 완성 버튼
@@ -68,4 +94,14 @@ function submitBtn() {
 function soundCall() {
 	var submitSound = new Audio("./src/sound/shining.mp3");
 	submitSound.play();
+}
+
+// 리셋 버튼
+function resetBtn() {
+	var objList = document.querySelectorAll('.draggable');
+	for (var o of objList) {
+		o.remove();
+	}
+	window.localStorage.setItem('makeFlowerWreathSeq', 0);
+	window.localStorage.setItem('makeFlowerWreath', '');
 }

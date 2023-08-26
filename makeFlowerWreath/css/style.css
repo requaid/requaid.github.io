@@ -145,10 +145,22 @@ li {
 	position: relative;
 	display: flex;
 	justify-content: center;
-	/* background-color: rgba(255, 255, 255, 0.1); */
 	width: 900px;
 	height: calc(100% - 106px);
 	margin: 0 auto;
+}
+
+#printSection {
+	display: contents;
+}
+
+#areaBorder {
+	display: block;
+	position: absolute;
+	margin: 4em auto;
+	width: 600px;
+	height: 600px;
+	background-color: rgba(255, 255, 255, 0.3);
 }
 
 #basicFrame {
@@ -157,17 +169,8 @@ li {
 	margin: 4em auto;
 	width: 600px;
 	height: 600px;
-	background-color: rgba(255, 255, 255, 0.4);
 }
 
-#AreaBorder {
-	display: block;
-	position: absolute;
-	margin: 4em auto;
-	width: 600px;
-	height: 600px;
-	/* background-color: rgba(255, 255, 255, 0.4); */
-}
 
 #customArea {
 	display: block;
@@ -175,7 +178,6 @@ li {
 	margin: 4em auto;
 	width: 600px;
 	height: 600px;
-	background-color: rgba(255, 255, 255, 0.4);
 }
 
 
@@ -212,8 +214,6 @@ li {
 .active {
 	z-index: 999 !important;
 }
-
-
 
 .disable {
 	display: none !important;
@@ -254,7 +254,6 @@ li {
 		margin: 5em auto;
 		width: 400px;
 		height: 400px;
-		background-color: red;
 	}
 
 	#basicFrame {
