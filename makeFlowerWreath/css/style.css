@@ -75,7 +75,7 @@ li {
 }
 
 #menu {
-	z-index: 1;
+	z-index: 0;
 	position: absolute;
 	width: 100%;
 	margin: 0 auto;
@@ -201,14 +201,14 @@ li {
 	position: absolute;
 	align-items: center;
 	justify-content: center;
-	width: 100px;
-	height: 100px;
+	/* width: 100px;
+	height: 100px; */
 	z-index: 100;
 }
 
 .flower img {
-	width: 100px;
-	height: 100px;
+	/* width: 100px;
+	height: 100px; */
 }
 
 .active {

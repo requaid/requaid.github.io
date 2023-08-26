@@ -91,6 +91,7 @@ function saveCache() {
 function submitBtn() {
 	soundCall();
 }
+
 function soundCall() {
 	var submitSound = new Audio("./src/sound/shining.mp3");
 	submitSound.play();
