@@ -108,8 +108,23 @@ function saveCache() {
 
 // 완성 버튼
 function submitBtn() {
+	html2canvas(document.querySelector("#printSection"), { backgroundColor: null }).then(canvas => {
+		saveImg(canvas.toDataURL('image/jpg'), '화관 만들기.png');
+		// document.body.appendChild(canvas);
+	});
 	soundCall();
 }
+const saveImg = (uri, filename) => {
+	let link = document.createElement('a');
+
+	document.body.appendChild(link);
+
+	link.href = uri;
+	link.download = filename;
+	link.click();
+
+	document.body.removeChild(link);
+};
 
 function soundCall() {
 	var submitSound = new Audio("./src/sound/shining.mp3");
