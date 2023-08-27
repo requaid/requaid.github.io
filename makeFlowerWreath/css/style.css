@@ -74,6 +74,11 @@ li {
 	float: none;
 }
 
+#text {
+	display: block;
+
+}
+
 .peri {
 	font-size: medium;
 	line-height: 1.3em;
@@ -84,6 +89,7 @@ li {
 }
 
 #exit {
+	margin: 5px;
 	cursor: pointer;
 	display: flex;
 	justify-content: center;
@@ -310,6 +316,14 @@ li {
 		width: 500px;
 		height: 800px;
 		z-index: -1;
+		overflow-y: scroll;
+		overflow-x: hidden;
+	}
+
+	#text {
+		display: inline;
+		width: 500px;
+		height: 800px;
 	}
 
 	#menu {
