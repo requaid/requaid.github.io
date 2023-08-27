@@ -14,7 +14,7 @@
 
 * {
 	cursor: url(https://cur.cursors-4u.net/games/gam-4/gam308.cur),
-		auto;
+		auto !important;
 }
 
 html, body {
