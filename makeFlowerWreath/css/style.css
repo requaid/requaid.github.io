@@ -311,13 +311,14 @@ li {
 /* 모바일 */
 @media (max-width: 767px) {
 	#notice {
-		display: flex;
+		display: table;
 		position: absolute;
-		width: 500px;
+		width: 600px;
 		height: 800px;
 		z-index: -1;
 		overflow-y: scroll;
 		overflow-x: hidden;
+		margin: auto;
 	}
 
 	#text {
