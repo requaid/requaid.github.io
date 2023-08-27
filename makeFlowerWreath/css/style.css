@@ -304,6 +304,14 @@ li {
 
 /* 모바일 */
 @media (max-width: 767px) {
+	#notice {
+		display: flex;
+		position: absolute;
+		width: 500px;
+		height: 800px;
+		z-index: -1;
+	}
+
 	#menu {
 		margin: 0 auto;
 	}
