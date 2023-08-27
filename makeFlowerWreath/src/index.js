@@ -1,3 +1,5 @@
+var bgm = new Audio("./src/sound/bgm.mp3");
+bgm.volume = 0.5;
 window.onload(getBeforeWork());
 ribbonList();
 
@@ -28,13 +30,15 @@ function getBeforeWork() {
 
 // 브금 온오프
 function toggleBgm() {
-	var called_frame = parent.document.getElementById("bgm_frame").contentWindow;
+	// var called_frame = parent.document.getElementById("bgm_frame").contentWindow;
 	var soundButton = document.getElementById('speaker');
 
 	if (soundButton.classList.contains('soundOff')) {
-		called_frame.player.playVideo();
+		bgm.play();
+		// called_frame.player.playVideo();
 	} else {
-		called_frame.player.pauseVideo();
+		bgm.pause();
+		// called_frame.player.pauseVideo();
 	}
 	soundButton.classList.toggle('soundOff');
 	if ($('html').hasClass('single')) {
@@ -49,7 +53,8 @@ function exitNotice() {
 	var notice = document.getElementById('notice');
 	notice.classList.toggle('active');
 	notice.classList.toggle('disable');
-	called_frame.player.playVideo();
+	bgm.play();
+	// called_frame.player.playVideo();
 }
 
 
@@ -112,7 +117,8 @@ function submitBtn() {
 	html2canvas(document.querySelector("#printSection"), { backgroundColor: null }).then(canvas => {
 		saveImg(canvas.toDataURL('image/jpg'), '화관 만들기.png');
 	});
-	var submitSound = new Audio("./src/sound/humming.mp3");
+	var submitSound = new Audio("./src/sound/shining.mp3");
+	submitSound.volume = 0.3;
 	submitSound.play();
 }
 
