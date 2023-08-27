@@ -246,19 +246,19 @@ li {
 }
 
 .base_vine {
-	background: url('/src/img/base/base_vine.png');
+	background: url('../src/img/base/base_vine.png');
 }
 
 .base_flower {
-	background: url('/src/img/base/base_flower.png');
+	background: url('../src/img/base/base_flower.png');
 }
 
 .base_branch {
-	background: url('/src/img/base/base_branch.png');
+	background: url('../src/img/base/base_branch.png');
 }
 
 .base_thorn {
-	background: url('/src/img/base/base_thorn.png');
+	background: url('../src/img/base/base_thorn.png');
 }
 
 #customArea {
