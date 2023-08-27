@@ -247,10 +247,49 @@
     </head>
 
     <body>
-        <div class="area">
-            <div id="notice">
-                <div id="exit" onclick="exitNotice()"></div>
+		<div id="notice" class="active">
+			<div id="text">
+				<ul class="peri"> <p style="font-size: larger;">🌺페리도트와 함께하는 꽃공예!🎈</p>
+					<li>🌸꽃모양 손잡이를 누르면 재료가 들어있는 서랍이 열린다!🌸</li>
+					<li>선택하면 바깥으로 꺼낼 수 있어!</li>
+					<li>가장 나중에 꺼낸 재료가 가장 위로 올라와!</li>
+					<li>▼</li>
+					<li style="color: lightgreen;">페리도트의 팁!</li>
+					<li>🪴잎사귀나 뒤쪽에 놓고 싶은 것을 먼저 배치하자!🪴</li>
+					<li>　</li>
+					<li>■하얀색 작업대가 보이지?■</li>
+					<li>작업대 위에서 재료를 조합해 모양을 만들어보자.</li>
+					<li style="color: lightgreen;">❌작업대 바깥으로 나간 재료는 완성에 포함 안 돼!❌</li>
+					<li>　</li>
+					<li>꺼냈는데 사용하고 싶지 않아진 재료는</li>
+					<li style="color: lightgreen;">작업대 밖으로 꺼내줘!</li>
+					<li>　</li>
+					<li>처음부터 다시 하고 싶어지면</li>
+					<li style="color: lightgreen;">↙️다시 하고 싶다고 말해줘!</li>
+					<li>재료를 전부 정리 해줄게 ~</li>
+					<li>　</li>
+					<li>완성 ~ !🙋이라고 외치면 보존마법을 걸어줄거야.🧙</li>
+					<li>🎟️티켓 하나🎟️로 축제 기간 내내 무제한 이용 가능~</li>
+					<li>🕺🕺그럼 즐거운 시간 보내 ~ !🤸🤸</li>
+				</ul>
+				<ul class="owner">
+					<li>-</li>
+					<li>완성 버튼을 누르면 흰색 공간에 있는 이미지가 투명화 파일로 저장됩니다.</li>
+					<li>자유롭게 가공해서 사용해주세요!</li>
+					<li>　</li>
+					<li>확인을 누르면 음악이 재생됩니다.</li>
+					<li>원하지 않으실 경우 입장 후 좌측 상단의 음표모양을 눌러주세요.</li>
+					<li>　</li>
+					<li>모바일 환경에서도 조작이 가능하도록 제작하였으나</li>
+					<li>가급적 PC환경에서의 조작을 추천드립니다.</li>
+					<li>\</li>
+					<li style="color:cadetblue;">본 페이지는 익명의 지원을 받아 제작되었으며</li>
+					<li style="color:cadetblue;">이미지 소스는 클립 스튜디오와 에셋을 구입하여 제작하였습니다.</li>
+				</ul>
+			</div>
+                <div id="exit" onclick="exitNotice()">확인</div>
             </div>
+        <div class="area">
             <div id="header">
                 <div id="site_bgm_box" class="disable">
                     <iframe
@@ -291,8 +330,8 @@
                                 <li onclick="selectMenu('leaf')">
                                     <img src="./src/img/button/leaf.png" />
                                 </li>
-                                <li onclick="selectMenu('black')">
-                                    <img src="./src/img/button/black.png" />
+                                <!-- <li onclick="selectMenu('black')">
+                                    <img src="./src/img/button/black.png" /> -->
                                 </li>
                                 <li onclick="selectMenu('white')">
                                     <img src="./src/img/button/white.png" />
@@ -300,21 +339,21 @@
                                 <li onclick="selectMenu('red')">
                                     <img src="./src/img/button/red.png" />
                                 </li>
-                                <li onclick="selectMenu('pink')">
+                                <!-- <li onclick="selectMenu('pink')">
                                     <img src="./src/img/button/pink.png" />
-                                </li>
-                                <li onclick="selectMenu('orange')">
+                                </li> -->
+                                <!-- <li onclick="selectMenu('orange')">
                                     <img src="./src/img/button/orange.png" />
-                                </li>
+                                </li> -->
                                 <li onclick="selectMenu('yellow')">
                                     <img src="./src/img/button/yellow.png" />
                                 </li>
                                 <li onclick="selectMenu('green')">
                                     <img src="./src/img/button/green.png" />
                                 </li>
-                                <li onclick="selectMenu('blue')">
+                                <!-- <li onclick="selectMenu('blue')">
                                     <img src="./src/img/button/blue.png" />
-                                </li>
+                                </li> -->
                                 <li onclick="selectMenu('violet')">
                                     <img src="./src/img/button/violet.png" />
                                 </li>
@@ -337,106 +376,336 @@
                             </ul>
                             <ul id="ribbon" class="disable"></ul>
                             <ul id="leaf" class="disable">
-                                <li>노란 단풍</li>
-                                <li>빨간 단풍</li>
-                                <li>얇은 잎</li>
-                                <li>작은 잎</li>
-                                <li>넓은 잎</li>
-                            </ul>
-                            <ul id="black" class="disable">
-                                <li onclick="getFlowerObj('11_1', 'flower')">
-                                    <img src="./src/img/button/11_1.png" />
+                                <li onclick="getFlowerObj('01', 'leaf')">
+                                    <img src="./src/img/button/01.png" />
                                 </li>
-                                <li onclick="getFlowerObj('11_2', 'flower')">
-                                    <img src="./src/img/button/11_2.png" />
+                                <li onclick="getFlowerObj('02', 'leaf')">
+                                    <img src="./src/img/button/02.png" />
+                                </li>
+                                <li onclick="getFlowerObj('03', 'leaf')">
+                                    <img src="./src/img/button/03.png" />
+                                </li>
+                                <li onclick="getFlowerObj('04', 'leaf')">
+                                    <img src="./src/img/button/04.png" />
+                                </li>
+                                <li onclick="getFlowerObj('05', 'leaf')">
+                                    <img src="./src/img/button/05.png" />
+                                </li>
+                                <li onclick="getFlowerObj('06', 'leaf')">
+                                    <img src="./src/img/button/06.png" />
+                                </li>
+                                <li onclick="getFlowerObj('07', 'leaf')">
+                                    <img src="./src/img/button/07.png" />
+                                </li>
+                                <li onclick="getFlowerObj('08', 'leaf')">
+                                    <img src="./src/img/button/08.png" />
+                                </li>
+                                <li onclick="getFlowerObj('09', 'leaf')">
+                                    <img src="./src/img/button/09.png" />
+                                </li>
+                                <li onclick="getFlowerObj('010', 'leaf')">
+                                    <img src="./src/img/button/010.png" />
+                                </li>
+                                <li onclick="getFlowerObj('011', 'leaf')">
+                                    <img src="./src/img/button/011.png" />
+                                </li>
+                                <li onclick="getFlowerObj('012', 'leaf')">
+                                    <img src="./src/img/button/012.png" />
+                                </li>
+                                <li onclick="getFlowerObj('013', 'leaf')">
+                                    <img src="./src/img/button/013.png" />
+                                </li>
+                                <li onclick="getFlowerObj('014', 'leaf')">
+                                    <img src="./src/img/button/014.png" />
+                                </li>
+                                <li onclick="getFlowerObj('015', 'leaf')">
+                                    <img src="./src/img/button/015.png" />
+                                </li>
+                                <li onclick="getFlowerObj('016', 'leaf')">
+                                    <img src="./src/img/button/016.png" />
+                                </li>
+                                <li onclick="getFlowerObj('017', 'leaf')">
+                                    <img src="./src/img/button/017.png" />
+                                </li>
+                                <li onclick="getFlowerObj('018', 'leaf')">
+                                    <img src="./src/img/button/018.png" />
+                                </li>
+                                <li onclick="getFlowerObj('019', 'leaf')">
+                                    <img src="./src/img/button/019.png" />
+                                </li>
+                                <li onclick="getFlowerObj('020', 'leaf')">
+                                    <img src="./src/img/button/020.png" />
+                                </li>
+                                <li onclick="getFlowerObj('021', 'leaf')">
+                                    <img src="./src/img/button/021.png" />
+                                </li>
+                                <li onclick="getFlowerObj('022', 'leaf')">
+                                    <img src="./src/img/button/022.png" />
                                 </li>
                             </ul>
+                            <!-- <ul id="black" class="disable">
+                                
+                            </ul> -->
                             <ul id="white" class="disable">
-                                <li onclick="getFlowerObj('21_1', 'flower')">
-                                    <img src="./src/img/button/21_1.png" />
+                                <li onclick="getFlowerObj('11', 'flower')">
+                                    <img src="./src/img/button/11.png" />
                                 </li>
-                                <li onclick="getFlowerObj('21_2', 'flower')">
-                                    <img src="./src/img/button/21_2.png" />
+                                <li onclick="getFlowerObj('12', 'flower')">
+                                    <img src="./src/img/button/12.png" />
+                                </li>
+                                <li onclick="getFlowerObj('13', 'flower')">
+                                    <img src="./src/img/button/13.png" />
+                                </li>
+                                <li onclick="getFlowerObj('14', 'flower')">
+                                    <img src="./src/img/button/14.png" />
+                                </li>
+                                <li onclick="getFlowerObj('15', 'flower')">
+                                    <img src="./src/img/button/15.png" />
+                                </li>
+                                <!-- <li onclick="getFlowerObj('16', 'flower')">
+                                    <img src="./src/img/button/16.png" />
+                                </li>
+                                <li onclick="getFlowerObj('17', 'flower')">
+                                    <img src="./src/img/button/17.png" />
+                                </li>
+                                <li onclick="getFlowerObj('18', 'flower')">
+                                    <img src="./src/img/button/18.png" />
+                                </li>
+                                <li onclick="getFlowerObj('19', 'flower')">
+                                    <img src="./src/img/button/19.png" />
+                                </li> -->
+								<li onclick="getFlowerObj('21', 'flower')">
+                                    <img src="./src/img/button/21.png" />
+                                </li>
+                                <li onclick="getFlowerObj('22', 'flower')">
+                                    <img src="./src/img/button/22.png" />
+                                </li>
+                                <li onclick="getFlowerObj('23', 'flower')">
+                                    <img src="./src/img/button/23.png" />
+                                </li>
+                                <li onclick="getFlowerObj('24', 'flower')">
+                                    <img src="./src/img/button/24.png" />
+                                </li>
+                                <li onclick="getFlowerObj('25', 'flower')">
+                                    <img src="./src/img/button/25.png" />
+                                </li>
+                                <li onclick="getFlowerObj('26', 'flower')">
+                                    <img src="./src/img/button/26.png" />
+                                </li>
+                                <li onclick="getFlowerObj('27', 'flower')">
+                                    <img src="./src/img/button/27.png" />
+                                </li>
+                                <li onclick="getFlowerObj('28', 'flower')">
+                                    <img src="./src/img/button/28.png" />
+                                </li>
+                                <li onclick="getFlowerObj('29', 'flower')">
+                                    <img src="./src/img/button/29.png" />
                                 </li>
                             </ul>
                             <ul id="red" class="disable">
-                                <li onclick="getFlowerObj('31_1', 'flower')">
-                                    <img src="./src/img/button/31_1.png" />
+                                <li onclick="getFlowerObj('31', 'flower')">
+                                    <img src="./src/img/button/31.png" />
                                 </li>
-                                <li onclick="getFlowerObj('31_2', 'flower')">
-                                    <img src="./src/img/button/31_2.png" />
+                                <li onclick="getFlowerObj('32', 'flower')">
+                                    <img src="./src/img/button/32.png" />
                                 </li>
+                                <li onclick="getFlowerObj('33', 'flower')">
+                                    <img src="./src/img/button/33.png" />
+                                </li>
+                                <li onclick="getFlowerObj('34', 'flower')">
+                                    <img src="./src/img/button/34.png" />
+                                </li>
+                                <li onclick="getFlowerObj('35', 'flower')">
+                                    <img src="./src/img/button/35.png" />
+                                </li>
+                                <!-- <li onclick="getFlowerObj('36', 'flower')">
+                                    <img src="./src/img/button/36.png" />
+                                </li>
+                                <li onclick="getFlowerObj('37', 'flower')">
+                                    <img src="./src/img/button/37.png" />
+                                </li>
+                                <li onclick="getFlowerObj('38', 'flower')">
+                                    <img src="./src/img/button/38.png" />
+                                </li>
+                                <li onclick="getFlowerObj('39', 'flower')">
+                                    <img src="./src/img/button/39.png" />
+                                </li> -->
+								 <li onclick="getFlowerObj('41', 'flower')">
+                                    <img src="./src/img/button/41.png" />
+                                </li>
+                                <li onclick="getFlowerObj('42', 'flower')">
+                                    <img src="./src/img/button/42.png" />
+                                </li>
+                                <li onclick="getFlowerObj('43', 'flower')">
+                                    <img src="./src/img/button/43.png" />
+                                </li>
+                                <li onclick="getFlowerObj('44', 'flower')">
+                                    <img src="./src/img/button/44.png" />
+                                </li>
+                                <li onclick="getFlowerObj('45', 'flower')">
+                                    <img src="./src/img/button/45.png" />
+                                </li>
+                                <li onclick="getFlowerObj('46', 'flower')">
+                                    <img src="./src/img/button/46.png" />
+                                </li>
+                                <li onclick="getFlowerObj('47', 'flower')">
+                                    <img src="./src/img/button/47.png" />
+                                </li>
+                                <li onclick="getFlowerObj('48', 'flower')">
+                                    <img src="./src/img/button/48.png" />
+                                </li>
+                                <!-- <li onclick="getFlowerObj('49', 'flower')">
+                                    <img src="./src/img/button/49.png" />
+                                </li> -->
                             </ul>
-                            <ul id="pink" class="disable">
-                                <li onclick="getFlowerObj('41_1', 'flower')">
-                                    <img src="./src/img/button/41_1.png" />
-                                </li>
-                                <li onclick="getFlowerObj('41_2', 'flower')">
-                                    <img src="./src/img/button/41_2.png" />
-                                </li>
-                                <li onclick="getFlowerObj('42_1', 'flower')">
-                                    <img src="./src/img/button/42_1.png" />
-                                </li>
+                            <!-- <ul id="pink" class="disable">
+                               
                             </ul>
                             <ul id="orange" class="disable">
-                                <li onclick="getFlowerObj('51_1', 'flower')">
-                                    <img src="./src/img/button/51_1.png" />
-                                </li>
-                                <li onclick="getFlowerObj('51_2', 'flower')">
-                                    <img src="./src/img/button/51_2.png" />
-                                </li>
-                            </ul>
+                                
+                            </ul> -->
                             <ul id="yellow" class="disable">
-                                <li onclick="getFlowerObj('61_1', 'flower')">
-                                    <img src="./src/img/button/61_1.png" />
+								<li onclick="getFlowerObj('51', 'flower')">
+                                    <img src="./src/img/button/51.png" />
                                 </li>
-                                <li onclick="getFlowerObj('61_2', 'flower')">
-                                    <img src="./src/img/button/61_2.png" />
+                                <li onclick="getFlowerObj('52', 'flower')">
+                                    <img src="./src/img/button/52.png" />
                                 </li>
-                                <li onclick="getFlowerObj('62_1', 'flower')">
-                                    <img src="./src/img/button/62_1.png" />
+                                <li onclick="getFlowerObj('53', 'flower')">
+                                    <img src="./src/img/button/53.png" />
                                 </li>
-                                <li onclick="getFlowerObj('63_1', 'flower')">
-                                    <img src="./src/img/button/63_1.png" />
+                                <li onclick="getFlowerObj('54', 'flower')">
+                                    <img src="./src/img/button/54.png" />
                                 </li>
+                                <!-- <li onclick="getFlowerObj('55', 'flower')">
+                                    <img src="./src/img/button/55.png" />
+                                </li>
+                                <li onclick="getFlowerObj('56', 'flower')">
+                                    <img src="./src/img/button/56.png" />
+                                </li>
+                                <li onclick="getFlowerObj('57', 'flower')">
+                                    <img src="./src/img/button/57.png" />
+                                </li>
+                                <li onclick="getFlowerObj('58', 'flower')">
+                                    <img src="./src/img/button/58.png" />
+                                </li>
+                                <li onclick="getFlowerObj('59', 'flower')">
+                                    <img src="./src/img/button/59.png" />
+                                </li> -->
+                                <li onclick="getFlowerObj('61', 'flower')">
+                                    <img src="./src/img/button/61.png" />
+                                </li>
+                                <li onclick="getFlowerObj('62', 'flower')">
+                                    <img src="./src/img/button/62.png" />
+                                </li>
+                                <li onclick="getFlowerObj('63', 'flower')">
+                                    <img src="./src/img/button/63.png" />
+                                </li>
+                                <li onclick="getFlowerObj('64', 'flower')">
+                                    <img src="./src/img/button/64.png" />
+                                </li>
+                                <li onclick="getFlowerObj('65', 'flower')">
+                                    <img src="./src/img/button/65.png" />
+                                </li>
+                                <!-- <li onclick="getFlowerObj('66', 'flower')">
+                                    <img src="./src/img/button/66.png" />
+                                </li>
+                                <li onclick="getFlowerObj('67', 'flower')">
+                                    <img src="./src/img/button/67.png" />
+                                </li>
+                                <li onclick="getFlowerObj('68', 'flower')">
+                                    <img src="./src/img/button/68.png" />
+                                </li>
+                                <li onclick="getFlowerObj('69', 'flower')">
+                                    <img src="./src/img/button/69.png" />
+                                </li> -->
                             </ul>
                             <ul id="green" class="disable">
-                                <li onclick="getFlowerObj('71_1', 'flower')">
-                                    <img src="./src/img/button/71_1.png" />
+                                <li onclick="getFlowerObj('71', 'flower')">
+                                    <img src="./src/img/button/71.png" />
                                 </li>
-                                <li onclick="getFlowerObj('71_2', 'flower')">
-                                    <img src="./src/img/button/71_2.png" />
+                                <li onclick="getFlowerObj('72', 'flower')">
+                                    <img src="./src/img/button/72.png" />
                                 </li>
+                                <li onclick="getFlowerObj('73', 'flower')">
+                                    <img src="./src/img/button/73.png" />
+                                </li>
+                                <!-- <li onclick="getFlowerObj('74', 'flower')">
+                                    <img src="./src/img/button/74.png" />
+                                </li>
+                                <li onclick="getFlowerObj('75', 'flower')">
+                                    <img src="./src/img/button/75.png" />
+                                </li>
+                                <li onclick="getFlowerObj('76', 'flower')">
+                                    <img src="./src/img/button/76.png" />
+                                </li>
+                                <li onclick="getFlowerObj('77', 'flower')">
+                                    <img src="./src/img/button/77.png" />
+                                </li>
+                                <li onclick="getFlowerObj('78', 'flower')">
+                                    <img src="./src/img/button/78.png" />
+                                </li>
+                                <li onclick="getFlowerObj('79', 'flower')">
+                                    <img src="./src/img/button/79.png" /> -->
+                                </li>
+                                <li onclick="getFlowerObj('81', 'flower')">
+                                    <img src="./src/img/button/81.png" />
+                                </li>
+                                <li onclick="getFlowerObj('82', 'flower')">
+                                    <img src="./src/img/button/82.png" />
+                                </li>
+                                <li onclick="getFlowerObj('83', 'flower')">
+                                    <img src="./src/img/button/83.png" />
+                                </li>
+                                <li onclick="getFlowerObj('84', 'flower')">
+                                    <img src="./src/img/button/84.png" />
+                                </li>
+                                <li onclick="getFlowerObj('85', 'flower')">
+                                    <img src="./src/img/button/85.png" />
+                                </li>
+                                <li onclick="getFlowerObj('86', 'flower')">
+                                    <img src="./src/img/button/86.png" />
+                                </li>
+                                <li onclick="getFlowerObj('87', 'flower')">
+                                    <img src="./src/img/button/87.png" />
+                                </li>
+                                <li onclick="getFlowerObj('88', 'flower')">
+                                    <img src="./src/img/button/88.png" />
+                                </li>
+                                <!-- <li onclick="getFlowerObj('89', 'flower')">
+                                    <img src="./src/img/button/89.png" />
+                                </li> -->
                             </ul>
-                            <ul id="blue" class="disable">
-                                <li onclick="getFlowerObj('81_1', 'flower')">
-                                    <img src="./src/img/button/81_1.png" />
-                                </li>
-                                <li onclick="getFlowerObj('81_2', 'flower')">
-                                    <img src="./src/img/button/81_2.png" />
-                                </li>
-                            </ul>
+                            <!-- <ul id="blue" class="disable">
+                                
+                            </ul> -->
                             <ul id="violet" class="disable">
-                                <li onclick="getFlowerObj('91_1', 'flower')">
-                                    <img src="./src/img/button/91_1.png" />
+                                <li onclick="getFlowerObj('91', 'flower')">
+                                    <img src="./src/img/button/91.png" />
                                 </li>
-                                <li onclick="getFlowerObj('91_2', 'flower')">
-                                    <img src="./src/img/button/91_2.png" />
+                                <li onclick="getFlowerObj('92', 'flower')">
+                                    <img src="./src/img/button/92.png" />
                                 </li>
-                                <li onclick="getFlowerObj('92_1', 'flower')">
-                                    <img src="./src/img/button/92_1.png" />
+                                <li onclick="getFlowerObj('93', 'flower')">
+                                    <img src="./src/img/button/93.png" />
                                 </li>
-                                <li onclick="getFlowerObj('92_2', 'flower')">
-                                    <img src="./src/img/button/92_2.png" />
+                                <li onclick="getFlowerObj('94', 'flower')">
+                                    <img src="./src/img/button/94.png" />
                                 </li>
-                                <li onclick="getFlowerObj('92_3', 'flower')">
-                                    <img src="./src/img/button/92_3.png" />
+                                <li onclick="getFlowerObj('95', 'flower')">
+                                    <img src="./src/img/button/95.png" />
                                 </li>
-                                <li onclick="getFlowerObj('92_4', 'flower')">
-                                    <img src="./src/img/button/92_4.png" />
+                                <li onclick="getFlowerObj('96', 'flower')">
+                                    <img src="./src/img/button/96.png" />
                                 </li>
-                                <li onclick="getFlowerObj('93_1', 'flower')">
-                                    <img src="./src/img/button/93_1.png" />
+                                <li onclick="getFlowerObj('97', 'flower')">
+                                    <img src="./src/img/button/97.png" />
+                                </li>
+                                <li onclick="getFlowerObj('98', 'flower')">
+                                    <img src="./src/img/button/98.png" />
+                                </li>
+                                <li onclick="getFlowerObj('99', 'flower')">
+                                    <img src="./src/img/button/99.png" />
                                 </li>
                             </ul>
                         </div>

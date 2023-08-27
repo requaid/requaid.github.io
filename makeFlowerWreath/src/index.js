@@ -47,8 +47,9 @@ function toggleBgm() {
 // 공지제거
 function exitNotice() {
 	var notice = document.getElementById('notice');
+	notice.classList.toggle('active');
+	notice.classList.toggle('disable');
 	called_frame.player.playVideo();
-	notice.classList.add('disable');
 }
 
 
@@ -110,13 +111,13 @@ function saveCache() {
 function submitBtn() {
 	html2canvas(document.querySelector("#printSection"), { backgroundColor: null }).then(canvas => {
 		saveImg(canvas.toDataURL('image/jpg'), '화관 만들기.png');
-		// document.body.appendChild(canvas);
 	});
-	soundCall();
+	var submitSound = new Audio("./src/sound/humming.mp3");
+	submitSound.play();
 }
+
 const saveImg = (uri, filename) => {
 	let link = document.createElement('a');
-
 	document.body.appendChild(link);
 
 	link.href = uri;
@@ -126,13 +127,6 @@ const saveImg = (uri, filename) => {
 	document.body.removeChild(link);
 };
 
-function soundCall() {
-	var submitSound = new Audio("./src/sound/shining.mp3");
-	submitSound.volume = 0.3;
-	submitSound.play();
-	// var savesound = new Audio("./src/sound/humming.mp3");
-	// savesound.play();
-}
 
 // 리셋 버튼
 function resetBtn() {
