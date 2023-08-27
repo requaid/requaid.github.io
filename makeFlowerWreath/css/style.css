@@ -75,7 +75,8 @@ li {
 }
 
 .peri {
-	font-size: large;
+	font-size: medium;
+	line-height: 1.3em;
 }
 
 .owner {
