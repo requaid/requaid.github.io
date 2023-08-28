@@ -1,5 +1,6 @@
 var bgm = new Audio("./src/sound/bgm.mp3");
 bgm.volume = 0.5;
+bgm.loop = true;
 window.onload(getBeforeWork());
 ribbonList();
 
