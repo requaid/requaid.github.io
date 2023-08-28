@@ -395,7 +395,7 @@ li {
 @media (min-width: 768px) and (max-width: 1023px) {
 
 	#menu {
-		height: 70%;
+/* 		height: 70%; */
 	}
 
 	#selectArea {
