@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>채팅 파일 분할기</title>
+<style>
+/* ── 디자인 토큰 ─────────────────────────────────────────────────────────── */
+:root {
+  --bg:        #f5f6f8;
+  --surface:   #ffffff;
+  --border:    #e2e5ea;
+  --text:      #1a1d23;
+  --text-sub:  #6b7280;
+  --accent:    #4f6ef7;
+  --accent-h:  #3a57e0;
+  --accent-bg: #eef1fe;
+  --green:     #16a34a;
+  --green-bg:  #dcfce7;
+  --orange:    #d97706;
+  --orange-bg: #fef3c7;
+  --red:       #dc2626;
+  --red-bg:    #fee2e2;
+  --radius:    10px;
+  --shadow:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #111318;
+    --surface:   #1e2128;
+    --border:    #2e3340;
+    --text:      #e8eaf0;
+    --text-sub:  #9ca3af;
+    --accent:    #6b84f8;
+    --accent-h:  #8699fa;
+    --accent-bg: #1e2440;
+    --green:     #4ade80;
+    --green-bg:  #14291e;
+    --orange:    #fbbf24;
+    --orange-bg: #2d1f07;
+    --red:       #f87171;
+    --red-bg:    #2d1010;
+  }
+}
+
+/* ── 기본 리셋 ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 32px 16px 64px;
+  line-height: 1.6;
+}
+
+/* ── 레이아웃 ────────────────────────────────────────────────────────────── */
+.wrap { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+header { text-align: center; padding: 8px 0 16px; }
+header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
+header p  { color: var(--text-sub); font-size: .9rem; margin-top: 4px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+}
+.card-title {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-sub);
+  margin-bottom: 14px;
+}
+
+/* ── 드롭존 ─────────────────────────────────────────────────────────────── */
+#drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+#drop-zone:hover, #drop-zone.active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+#drop-zone svg { display: block; margin: 0 auto 12px; opacity: .5; }
+#drop-zone .dz-main { font-size: 1rem; font-weight: 600; }
+#drop-zone .dz-sub  { font-size: .85rem; color: var(--text-sub); margin-top: 4px; }
+#file-input { display: none; }
+
+/* ── 파일 정보 ───────────────────────────────────────────────────────────── */
+#file-info { display: none; }
+.info-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.info-name { font-weight: 600; font-size: .95rem; flex: 1 1 100%; word-break: break-all; }
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600;
+}
+.badge-green  { background: var(--green-bg);  color: var(--green); }
+.badge-accent { background: var(--accent-bg); color: var(--accent); }
+.badge-orange { background: var(--orange-bg); color: var(--orange); }
+.badge-sub    { background: var(--border);    color: var(--text-sub); }
+
+/* ── 옵션 ───────────────────────────────────────────────────────────────── */
+#options { display: none; }
+.opt-section { margin-bottom: 20px; }
+.opt-section:last-child { margin-bottom: 0; }
+.opt-label { font-size: .85rem; font-weight: 600; margin-bottom: 10px; color: var(--text-sub); }
+
+
+.n-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.n-row label { font-size: .88rem; color: var(--text-sub); }
+.n-input {
+  width: 64px; padding: 5px 10px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  background: var(--bg); color: var(--text);
+  font-size: .9rem; text-align: center;
+  transition: border-color .1s;
+}
+.n-input:focus { outline: none; border-color: var(--accent); }
+
+.maxchars-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+select.styled, input.styled {
+  padding: 7px 12px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  background: var(--bg); color: var(--text);
+  font-size: .88rem;
+  transition: border-color .1s;
+  cursor: pointer;
+}
+select.styled:focus, input.styled:focus { outline: none; border-color: var(--accent); }
+#custom-chars { width: 130px; display: none; }
+
+/* ── 버튼 ───────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 20px; border-radius: 8px; border: none;
+  font-size: .9rem; font-weight: 600; cursor: pointer;
+  transition: background .1s, transform .08s;
+  text-decoration: none;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-h); }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.btn-outline {
+  background: var(--surface); color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn-outline:hover { background: var(--accent-bg); }
+.btn-outline:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+#split-btn { width: 100%; justify-content: center; font-size: 1rem; padding: 12px; }
+
+/* ── 결과 미리보기 ───────────────────────────────────────────────────────── */
+#preview { display: none; }
+.preview-summary {
+  font-size: .88rem; color: var(--text-sub); margin-bottom: 12px;
+}
+.preview-summary strong { color: var(--text); }
+
+.result-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.result-table th {
+  text-align: left; padding: 6px 10px;
+  border-bottom: 2px solid var(--border);
+  color: var(--text-sub); font-weight: 600;
+  font-size: .78rem; text-transform: uppercase; letter-spacing: .04em;
+}
+.result-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+.result-table tr:last-child td { border-bottom: none; }
+.result-table .fname { font-family: 'Consolas', 'Menlo', monospace; font-size: .82rem; }
+.result-table .chars { text-align: right; color: var(--text-sub); }
+.split-badge { background: var(--orange-bg); color: var(--orange); }
+
+.dl-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
+/* ── 토스트 ─────────────────────────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: #1a1d23; color: #fff;
+  padding: 10px 20px; border-radius: 8px; font-size: .88rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  transition: transform .25s ease, opacity .25s ease;
+  opacity: 0; pointer-events: none; white-space: nowrap; z-index: 99;
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ── 프로그레스 ──────────────────────────────────────────────────────────── */
+.progress-wrap { display: none; align-items: center; gap: 10px; margin-top: 8px; }
+.progress-bar-bg {
+  flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width .2s; }
+
+@media (max-width: 480px) {
+  .card { padding: 16px; }
+  .radio-group { gap: 6px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 헤더 -->
+  <header>
+    <h1>채팅 파일 분할기</h1>
+    <p>카카오톡 · LINE 백업 텍스트를 년도 / 월 / 일 / N개월 단위로 분할합니다</p>
+  </header>
+
+  <!-- 드롭존 -->
+  <div id="drop-zone" role="button" tabindex="0" aria-label="파일 선택">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+      <polyline points="8 12 12 8 16 12"/>
+      <line x1="12" y1="8" x2="12" y2="20"/>
+    </svg>
+    <p class="dz-main">파일을 여기에 드래그하거나 클릭해서 선택</p>
+    <p class="dz-sub">.txt 파일 지원 · UTF-8 / EUC-KR 자동 감지</p>
+    <input type="file" id="file-input" accept=".txt,text/plain">
+  </div>
+
+  <!-- 파일 정보 -->
+  <div class="card" id="file-info">
+    <div class="card-title">파일 정보</div>
+    <div class="info-row">
+      <span class="info-name" id="info-name"></span>
+      <span class="badge badge-sub"   id="info-lines"></span>
+      <span class="badge badge-green" id="info-enc"></span>
+      <span class="badge badge-accent" id="info-fmt"></span>
+    </div>
+  </div>
+
+  <!-- 옵션 -->
+  <div class="card" id="options">
+    <div class="card-title">분할 옵션</div>
+
+    <div class="opt-section">
+      <div class="opt-label">분할 기준</div>
+      <select class="styled" id="mode-select">
+        <option value="year">년도별</option>
+        <option value="month" selected>월별</option>
+        <option value="day">일별</option>
+        <option value="nmonth">N개월 단위</option>
+        <option value="nday">N일 단위</option>
+      </select>
+      <div class="n-row" id="n-row" style="display:none">
+        <label for="n-val" id="n-label">N 값 (개월):</label>
+        <input type="number" id="n-val" class="n-input" value="3" min="1" max="365">
+        <span style="font-size:.85rem;color:var(--text-sub)" id="n-hint">→ 분기별 (1~3월 / 4~6월 …)</span>
+      </div>
+    </div>
+
+    <div class="opt-section">
+      <div class="opt-label">최대 글자수 제한 <span style="font-weight:400;font-size:.8rem">(초과 시 _1 · _2 · … 로 추가 분할)</span></div>
+      <div class="maxchars-row">
+        <select class="styled" id="maxchars-select">
+          <option value="200000">Claude.ai  (200,000자)</option>
+          <option value="100000">ChatGPT  (100,000자)</option>
+          <option value="10000">네이버 블로그  (10,000자)</option>
+          <option value="custom">직접 입력</option>
+          <option value="0">제한 없음</option>
+        </select>
+        <input type="number" class="styled" id="custom-chars" placeholder="글자수 입력" min="1">
+      </div>
+    </div>
+  </div>
+
+  <!-- 분할 버튼 -->
+  <div id="split-wrap" style="display:none">
+    <button class="btn btn-primary" id="split-btn" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M6 3v12"/><path d="M18 9v12"/>
+        <path d="M3 9l3-3 3 3"/><path d="M15 15l3 3 3-3"/>
+        <line x1="3" y1="15" x2="21" y2="15"/><line x1="3" y1="9" x2="21" y2="9"/>
+      </svg>
+      분할 시작
+    </button>
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar"></div></div>
+      <span id="progress-text" style="font-size:.82rem;color:var(--text-sub);white-space:nowrap"></span>
+    </div>
+  </div>
+
+  <!-- 결과 미리보기 -->
+  <div class="card" id="preview">
+    <div class="card-title">분할 결과</div>
+    <p class="preview-summary" id="preview-summary"></p>
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>파일명</th>
+          <th style="text-align:right">글자수</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="result-body"></tbody>
+    </table>
+    <div class="dl-row">
+      <button class="btn btn-primary" id="btn-folder" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+        </svg>
+        폴더에 저장
+      </button>
+      <button class="btn btn-outline" id="btn-zip">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        ZIP 다운로드
+      </button>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// ── 정규식 (chat_splitter.js 동일) ──────────────────────────────────────────
+const RE_KAKAO_DATE   = /^-*\s*(\d{4})년\s+(\d{1,2})월\s+(\d{1,2})일\s+\S*요일\s*-*$/;
+const RE_KAKAO_MSG    = /^\[.+?\]\s+\[(오전|오후)\s+\d{1,2}:\d{2}\]/;
+const RE_KAKAO_INLINE = /^(\d{4})년\s+(\d{1,2})월\s+(\d{1,2})일\s+(오전|오후)\s+\d{1,2}:\d{2},/;
+const RE_LINE_DATE    = /^(\d{4})\.(\d{2})\.(\d{2})\s+\S+$/;
+const RE_ISO_DATE     = /^(\d{4})-(\d{2})-(\d{2})[T\s]/;
+
+const FORMAT_NAMES = {
+  kakao:        '카카오톡',
+  kakao_inline: '카카오톡 (구형)',
+  line:         'LINE',
+  iso:          'ISO 타임스탬프',
+};
+
+// ── 인코딩 ───────────────────────────────────────────────────────────────────
+async function readFileAsText(file) {
+  const buf = await file.arrayBuffer();
+  const utf8raw = new TextDecoder('utf-8').decode(buf);
+  const replacements = (utf8raw.match(/\uFFFD/g) || []).length;
+  if (replacements > 5) {
+    try {
+      const euckr = new TextDecoder('euc-kr').decode(buf);
+      return { text: euckr, encoding: 'EUC-KR' };
+    } catch { /* fallthrough */ }
+  }
+  const text = utf8raw.replace(/^\uFEFF/, ''); // BOM 제거
+  return { text, encoding: 'UTF-8' };
+}
+
+// ── 형식 감지 ─────────────────────────────────────────────────────────────────
+function detectFormat(lines) {
+  const sample = lines.slice(0, 200);
+  let kakaoDate = 0, kakaoMsg = 0, kakaoInline = 0, lineScore = 0, isoScore = 0;
+  for (const l of sample) {
+    const s = l.trim();
+    if (RE_KAKAO_DATE.test(s))   kakaoDate++;
+    if (RE_KAKAO_MSG.test(s))    kakaoMsg++;
+    if (RE_KAKAO_INLINE.test(s)) kakaoInline++;
+    if (RE_LINE_DATE.test(s))    lineScore++;
+    if (RE_ISO_DATE.test(s))     isoScore++;
+  }
+  const scores = {
+    kakao:        kakaoDate * 10 + kakaoMsg,
+    kakao_inline: kakaoInline * 10,
+    line:         lineScore * 10,
+    iso:          isoScore * 5,
+  };
+  const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+  return best[1] > 0 ? best[0] : 'kakao';
+}
+
+// ── 파싱 ──────────────────────────────────────────────────────────────────────
+function parseLines(lines) {
+  const result = [];
+  let current = null;
+  for (const raw of lines) {
+    const s = raw.trim();
+    let m;
+    if ((m = s.match(RE_KAKAO_DATE))) {
+      current = new Date(+m[1], +m[2] - 1, +m[3]);
+    } else if ((m = s.match(RE_KAKAO_INLINE))) {
+      current = new Date(+m[1], +m[2] - 1, +m[3]);
+    } else if ((m = s.match(RE_LINE_DATE))) {
+      current = new Date(+m[1], +m[2] - 1, +m[3]);
+    } else if ((m = s.match(RE_ISO_DATE))) {
+      current = new Date(+m[1], +m[2] - 1, +m[3]);
+    }
+    result.push({ date: current, text: raw });
+  }
+  return result;
+}
+
+// ── 기간 키 ───────────────────────────────────────────────────────────────────
+function periodKey(date, mode, n = 1) {
+  if (!date) return '__header__';
+  const y  = date.getFullYear();
+  const mo = date.getMonth() + 1;
+  const d  = date.getDate();
+  if (mode === 'year')   return `${y}`;
+  if (mode === 'month')  return `${y}-${String(mo).padStart(2,'0')}`;
+  if (mode === 'day')    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  if (mode === 'nmonth') {
+    const start = Math.floor((mo - 1) / n) * n + 1;
+    const end   = Math.min(start + n - 1, 12);
+    return `${y}-${String(start).padStart(2,'0')}to${String(end).padStart(2,'0')}`;
+  }
+  if (mode === 'nday') {
+    // 해당 연도 1월 1일 기준 경과 일수로 그룹 계산
+    const jan1 = new Date(y, 0, 1);
+    const dayOfYear = Math.floor((date - jan1) / 86400000);
+    const groupStart = Math.floor(dayOfYear / n) * n;
+    const startDate = new Date(y, 0, 1 + groupStart);
+    const endDate   = new Date(y, 0, Math.min(1 + groupStart + n - 1,
+      (new Date(y + 1, 0, 1) - jan1) / 86400000));
+    const fmt = d2 => `${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
+    return `${y}-${fmt(startDate)}to${fmt(endDate)}`;
+  }
+  return String(date);
+}
+
+// ── 그룹화 ────────────────────────────────────────────────────────────────────
+function groupByPeriod(parsed, mode, n = 1) {
+  const header = [];
+  const groups = new Map();
+  let headerDone = false;
+  for (const { date, text } of parsed) {
+    if (!date && !headerDone) {
+      header.push(text);
+    } else {
+      headerDone = true;
+      const key = periodKey(date, mode, n);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(text);
+    }
+  }
+  return { header, groups: new Map([...groups.entries()].sort()) };
+}
+
+// ── 글자수 분할 ───────────────────────────────────────────────────────────────
+function splitContent(headerText, lines, maxChars) {
+  const prefix = headerText ? headerText + '\n\n' : '';
+  const chunks = [];
+  let buf = [], curLen = prefix.length;
+  for (const line of lines) {
+    const need = line.length + 1;
+    if (buf.length && curLen + need > maxChars) {
+      chunks.push(prefix + buf.join('\n'));
+      buf = []; curLen = prefix.length;
+    }
+    buf.push(line); curLen += need;
+  }
+  if (buf.length) chunks.push(prefix + buf.join('\n'));
+  return chunks;
+}
+
+// ── 결과 파일 목록 생성 ───────────────────────────────────────────────────────
+function buildOutputFiles(header, groups, baseName, maxChars) {
+  const files = [];
+  for (const [key, lines] of groups) {
+    const content = lines.join('\n');
+    if (maxChars && content.length > maxChars) {
+      const chunks = splitContent('', lines, maxChars);
+      chunks.forEach((chunk, i) => {
+        files.push({ name: `${baseName}_${key}_${i + 1}.txt`, content: chunk, split: true });
+      });
+    } else {
+      files.push({ name: `${baseName}_${key}.txt`, content, split: false });
+    }
+  }
+  return files;
+}
+
+// ── 상태 ──────────────────────────────────────────────────────────────────────
+let currentFiles = [];   // 분할 결과 파일 목록
+let baseNameStr  = '';
+
+// ── UI 유틸 ───────────────────────────────────────────────────────────────────
+function show(el) { el.style.display = 'block'; }
+function hide(el) { el.style.display = 'none'; }
+function showFlex(el) { el.style.display = 'flex'; }
+
+let toastTimer;
+function toast(msg, duration = 3000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+function setProgress(pct, text) {
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = text;
+}
+
+// ── 파일 처리 ─────────────────────────────────────────────────────────────────
+async function handleFile(file) {
+  if (!file || !file.name.endsWith('.txt')) {
+    toast('⚠️ .txt 파일을 선택해 주세요.');
+    return;
+  }
+
+  // 읽기
+  let text, encoding;
+  try {
+    ({ text, encoding } = await readFileAsText(file));
+  } catch (e) {
+    toast('파일을 읽을 수 없습니다: ' + e.message);
+    return;
+  }
+
+  const lines = text.split(/\r?\n/);
+  const fmt   = detectFormat(lines);
+  const stem  = file.name.replace(/\.txt$/i, '');
+
+  // 상태 저장
+  baseNameStr = stem;
+  window._chatLines = lines;
+
+  // UI 업데이트 — 파일 정보
+  document.getElementById('info-name').textContent  = file.name;
+  document.getElementById('info-lines').textContent = lines.length.toLocaleString() + '줄';
+  document.getElementById('info-enc').textContent   = encoding;
+  document.getElementById('info-fmt').textContent   = FORMAT_NAMES[fmt] || fmt;
+  show(document.getElementById('file-info'));
+  show(document.getElementById('options'));
+  show(document.getElementById('split-wrap'));
+  hide(document.getElementById('preview'));
+
+  document.getElementById('split-btn').disabled = false;
+  currentFiles = [];
+  document.getElementById('result-body').innerHTML = '';
+  toast('파일 로드 완료');
+}
+
+// ── 분할 실행 ─────────────────────────────────────────────────────────────────
+function runSplit() {
+  const lines    = window._chatLines;
+  if (!lines) return;
+
+  const btn = document.getElementById('split-btn');
+  const mode     = document.getElementById('mode-select').value;
+  const n        = parseInt(document.getElementById('n-val').value, 10) || 3;
+  const selVal   = document.getElementById('maxchars-select').value;
+  let   maxChars = null;
+  if (selVal === 'custom') {
+    const v = parseInt(document.getElementById('custom-chars').value, 10);
+    if (!v || v < 1) {
+      toast('글자수 제한 값을 입력해 주세요.');
+      return;
+    }
+    maxChars = v;
+  } else if (selVal !== '0') {
+    maxChars = parseInt(selVal, 10);
+  }
+
+  // 진행 표시
+  btn.disabled = true;
+  const pw = document.getElementById('progress-wrap');
+  showFlex(pw);
+  setProgress(10, '파싱 중…');
+
+  // 비동기 처리 (UI 블록 방지)
+  setTimeout(() => {
+    try {
+      const parsed = parseLines(lines);
+      setProgress(40, '그룹화 중…');
+      const { header, groups } = groupByPeriod(parsed, mode, n);
+      setProgress(70, '파일 생성 중…');
+      currentFiles = buildOutputFiles(header, groups, baseNameStr, maxChars);
+      setProgress(100, '완료');
+
+      renderPreview(currentFiles, maxChars);
+      hide(pw);
+      btn.disabled = false;
+      setProgress(0, '');
+    } catch (e) {
+      hide(pw);
+      btn.disabled = false;
+      toast('오류: ' + e.message);
+    }
+  }, 30);
+}
+
+// ── 미리보기 렌더링 ───────────────────────────────────────────────────────────
+function renderPreview(files, maxChars) {
+  const tbody = document.getElementById('result-body');
+  tbody.innerHTML = '';
+
+  const totalChars = files.reduce((s, f) => s + f.content.length, 0);
+  const splitCount = files.filter(f => f.split).length;
+
+  let summaryHtml = `총 <strong>${files.length}개</strong> 파일 · <strong>${totalChars.toLocaleString()}</strong> 글자`;
+  if (maxChars) summaryHtml += ` · 최대 ${maxChars.toLocaleString()}자 제한`;
+  if (splitCount) summaryHtml += ` · <span style="color:var(--orange)">${splitCount}개 추가 분할됨</span>`;
+  document.getElementById('preview-summary').innerHTML = summaryHtml;
+
+  for (const f of files) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="fname">${esc(f.name)}</td>
+      <td class="chars">${f.content.length.toLocaleString()}</td>
+      <td>${f.split ? '<span class="badge split-badge">분할</span>' : ''}</td>`;
+    tbody.appendChild(tr);
+  }
+
+  show(document.getElementById('preview'));
+
+  // File System Access API 지원 시 폴더 저장 버튼 표시
+  const btnFolder = document.getElementById('btn-folder');
+  if ('showDirectoryPicker' in window) {
+    show(btnFolder);
+  } else {
+    hide(btnFolder);
+  }
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── 폴더 저장 (File System Access API) ───────────────────────────────────────
+async function saveToFolder() {
+  if (!currentFiles.length) return;
+  let dirHandle;
+  try {
+    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  } catch (e) {
+    if (e.name !== 'AbortError') toast('폴더 선택 오류: ' + e.message);
+    return;
+  }
+
+  const btn = document.getElementById('btn-folder');
+  btn.disabled = true;
+  btn.textContent = '저장 중…';
+
+  try {
+    for (const f of currentFiles) {
+      const fh  = await dirHandle.getFileHandle(f.name, { create: true });
+      const ws  = await fh.createWritable();
+      // UTF-8 BOM 포함하여 저장 (메모장 호환)
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const enc = new TextEncoder().encode(f.content);
+      const buf = new Uint8Array(bom.length + enc.length);
+      buf.set(bom); buf.set(enc, bom.length);
+      await ws.write(buf);
+      await ws.close();
+    }
+    toast(`✅ ${currentFiles.length}개 파일을 폴더에 저장했습니다.`, 4000);
+  } catch (e) {
+    toast('저장 오류: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg> 폴더에 저장`;
+  }
+}
+
+// ── ZIP 다운로드 (JSZip CDN) ──────────────────────────────────────────────────
+async function downloadZip() {
+  if (!currentFiles.length) return;
+  const btn = document.getElementById('btn-zip');
+  btn.disabled = true;
+  btn.textContent = 'ZIP 생성 중…';
+
+  try {
+    // JSZip 동적 로드
+    if (!window.JSZip) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+        s.onload  = resolve;
+        s.onerror = () => reject(new Error('JSZip 로드 실패. 인터넷 연결을 확인하세요.'));
+        document.head.appendChild(s);
+      });
+    }
+
+    const zip = new window.JSZip();
+    for (const f of currentFiles) {
+      // UTF-8 BOM 추가 (메모장 호환)
+      const bom = '\uFEFF';
+      zip.file(f.name, bom + f.content);
+    }
+
+    const blob = await zip.generateAsync({
+      type: 'blob',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 },
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = baseNameStr + '_split.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(`✅ ZIP 파일 다운로드 시작 (${currentFiles.length}개 파일)`, 4000);
+  } catch (e) {
+    toast('ZIP 오류: ' + e.message, 5000);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ZIP 다운로드`;
+  }
+}
+
+// ── 이벤트 바인딩 ─────────────────────────────────────────────────────────────
+
+// 드롭존
+const dropZone  = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('active'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('active');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  fileInput.value = ''; // 동일 파일 재선택 허용
+});
+
+// 분할 기준 드롭다운
+document.getElementById('mode-select').addEventListener('change', function () {
+  const nRow   = document.getElementById('n-row');
+  const nLabel = document.getElementById('n-label');
+  const nInput = document.getElementById('n-val');
+  if (this.value === 'nmonth') {
+    nLabel.textContent = 'N 값 (개월):';
+    nInput.max = 12; nInput.value = 3;
+    nInput.dispatchEvent(new Event('input'));
+    show(nRow);
+  } else if (this.value === 'nday') {
+    nLabel.textContent = 'N 값 (일):';
+    nInput.max = 365; nInput.value = 7;
+    nInput.dispatchEvent(new Event('input'));
+    show(nRow);
+  } else {
+    hide(nRow);
+  }
+});
+
+// N 값 힌트
+document.getElementById('n-val').addEventListener('input', function () {
+  const n = parseInt(this.value, 10);
+  const hint = document.getElementById('n-hint');
+  const mode = document.getElementById('mode-select').value;
+
+  if (mode === 'nmonth') {
+    if (!n || n < 1 || n > 12) { hint.textContent = ''; return; }
+    const ex = [];
+    for (let m = 1; m <= 12; m += n) {
+      const end = Math.min(m + n - 1, 12);
+      ex.push(m === end ? `${m}월` : `${m}~${end}월`);
+      if (ex.length >= 3) { if (m + n <= 12) ex.push('…'); break; }
+    }
+    hint.textContent = '→ ' + ex.join(' / ');
+  } else if (mode === 'nday') {
+    if (!n || n < 1) { hint.textContent = ''; return; }
+    if (n === 7)       hint.textContent = '→ 주간 단위';
+    else if (n === 14) hint.textContent = '→ 2주 단위';
+    else if (n === 30) hint.textContent = '→ 약 월 단위';
+    else               hint.textContent = `→ ${n}일 단위`;
+  }
+});
+
+// 최대 글자수 셀렉트
+document.getElementById('maxchars-select').addEventListener('change', function () {
+  const cc = document.getElementById('custom-chars');
+  this.value === 'custom' ? show(cc) : hide(cc);
+});
+
+// 분할 버튼
+document.getElementById('split-btn').addEventListener('click', runSplit);
+
+// 저장 버튼
+document.getElementById('btn-folder').addEventListener('click', saveToFolder);
+document.getElementById('btn-zip').addEventListener('click', downloadZip);
+</script>
+</body>
+</html>
