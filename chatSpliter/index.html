@@ -330,9 +330,9 @@ select.styled:focus, input.styled:focus { outline: none; border-color: var(--acc
 'use strict';
 
 // ── 정규식 (chat_splitter.js 동일) ──────────────────────────────────────────
-const RE_KAKAO_DATE   = /^-*\s*(\d{4})년\s+(\d{1,2})월\s+(\d{1,2})일\s+\S*요일\s*-*$/;
+const RE_KAKAO_DATE   = /^[-\s]*(\d{4})년\s+(\d{1,2})월\s+(\d{1,2})일(?:\s+\S*요일)?[-\s]*$/;
 const RE_KAKAO_MSG    = /^\[.+?\]\s+\[(오전|오후)\s+\d{1,2}:\d{2}\]/;
-const RE_KAKAO_INLINE = /^(\d{4})년\s+(\d{1,2})월\s+(\d{1,2})일\s+(오전|오후)\s+\d{1,2}:\d{2},/;
+const RE_KAKAO_INLINE = /^(\d{4})년\s+(\d{1,2})월\s+(\d{1,2})일\s+(오전|오후)\s+\d{1,2}:\d{2}/;
 const RE_LINE_DATE    = /^(\d{4})\.(\d{2})\.(\d{2})\s+\S+$/;
 const RE_ISO_DATE     = /^(\d{4})-(\d{2})-(\d{2})[T\s]/;
 
