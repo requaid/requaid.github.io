@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com https://uploads.github.com https://cdn.jsdelivr.net; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta name="referrer" content="no-referrer">
+  <title>3D Model Board — Viewer</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="viewer-page">
+  <div class="viewer-layout">
+    <div class="viewer-wrap">
+      <div class="viewer-container" id="viewer-container">
+        <canvas id="viewer-canvas" class="viewer-canvas"></canvas>
+
+        <div class="viewer-topbar">
+          <div class="viewer-info">
+            <div class="title" id="v-title">로딩중...</div>
+            <div class="meta" id="v-meta"></div>
+          </div>
+          <div class="viewer-top-actions">
+            <button id="btn-snapshot" class="icon-btn" title="스냅샷 저장">📷</button>
+            <a href="index.html" class="icon-btn" title="목록으로" style="text-decoration:none;">↩</a>
+          </div>
+        </div>
+
+        <div class="viewer-overlay active" id="overlay">
+          <div class="spinner"></div>
+          <div id="overlay-text">모델 로딩중...</div>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-inner">
+            <div class="dropzone-icon">⬇</div>
+            <div>모션 파일을 드롭하세요</div>
+            <div class="dropzone-ext">.vmd / .bvh</div>
+          </div>
+        </div>
+
+        <div class="viewer-bottombar">
+          <button class="motion-btn" data-motion="idle">🧍 스탠딩</button>
+          <button class="motion-btn" data-motion="walk">🚶 걷기</button>
+          <button class="motion-btn" data-motion="run">🏃 달리기</button>
+          <button class="motion-btn" data-motion="dance">💃 춤추기</button>
+          <button class="motion-btn" id="btn-stop">⏹ 정지</button>
+          <span class="motion-status" id="motion-status">대기</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-host"></div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/",
+      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.1.0/lib/three-vrm.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="js/view.js"></script>
+</body>
+</html>

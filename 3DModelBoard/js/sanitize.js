@@ -1,0 +1,105 @@
+import { CONFIG } from './config.js';
+
+export function setText(el, value) {
+  if (!el) return;
+  el.textContent = value == null ? '' : String(value);
+}
+
+export function makeEl(tag, opts = {}) {
+  const el = document.createElement(tag);
+  if (opts.className) el.className = opts.className;
+  if (opts.text != null) el.textContent = String(opts.text);
+  if (opts.attrs) for (const [k, v] of Object.entries(opts.attrs)) el.setAttribute(k, String(v));
+  if (opts.children) for (const c of opts.children) if (c) el.appendChild(c);
+  return el;
+}
+
+export function getExt(name) {
+  const i = String(name || '').lastIndexOf('.');
+  return i < 0 ? '' : name.slice(i + 1).toLowerCase();
+}
+
+export function isModelExt(ext) { return CONFIG.MODEL_EXT.includes(ext); }
+export function isMotionExt(ext) { return CONFIG.MOTION_EXT.includes(ext); }
+export function isImageExt(ext) { return CONFIG.IMAGE_EXT.includes(ext); }
+
+export function isSafeImagePath(path) {
+  return typeof path === 'string' && CONFIG.IMAGE_PATH_WHITELIST.test(path);
+}
+
+export function isSafeModelPath(path) {
+  return typeof path === 'string' && CONFIG.PATH_WHITELIST.test(path);
+}
+
+export function slugify(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40) || ('post-' + Date.now().toString(36));
+}
+
+export function sanitizeTags(input) {
+  if (!input) return [];
+  const raw = Array.isArray(input) ? input : String(input).split(',');
+  const out = [];
+  for (const t of raw) {
+    const v = String(t).trim().replace(/[^\w가-힣\- ]/g, '').slice(0, 24);
+    if (v && !out.includes(v)) out.push(v);
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+
+export function clampText(s, max) {
+  s = String(s == null ? '' : s);
+  return s.length > max ? s.slice(0, max) : s;
+}
+
+export async function checkMagicBytes(file, ext) {
+  try {
+    const buf = await file.slice(0, 32).arrayBuffer();
+    const u8 = new Uint8Array(buf);
+    const asc = new TextDecoder('ascii', { fatal: false }).decode(u8);
+    switch (ext) {
+      case 'vrm':
+        return u8[0] === 0x67 && u8[1] === 0x6C && u8[2] === 0x54 && u8[3] === 0x46;
+      case 'pmx':
+        return asc.startsWith('PMX ');
+      case 'pmd':
+        return asc.startsWith('Pmd');
+      case 'vmd':
+        return asc.startsWith('Vocaloid Motion Data');
+      case 'bvh':
+        return /^\s*HIERARCHY/i.test(asc);
+      case 'png':
+        return u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4E && u8[3] === 0x47;
+      case 'jpg': case 'jpeg':
+        return u8[0] === 0xFF && u8[1] === 0xD8 && u8[2] === 0xFF;
+      case 'webp':
+        return asc.startsWith('RIFF') && asc.slice(8, 12) === 'WEBP';
+      default:
+        return false;
+    }
+  } catch {
+    return false;
+  }
+}
+
+export function formatBytes(n) {
+  if (!Number.isFinite(n)) return '-';
+  const u = ['B','KB','MB','GB'];
+  let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return n.toFixed(n >= 10 || i === 0 ? 0 : 1) + ' ' + u[i];
+}
+
+export function formatDate(iso) {
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toISOString().slice(0, 10).replace(/-/g, '.');
+  } catch { return ''; }
+}

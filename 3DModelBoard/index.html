@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com https://uploads.github.com https://cdn.jsdelivr.net; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta name="referrer" content="no-referrer">
+  <title>3D Model Board</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container" id="page-root">
+    <div class="list-toolbar">
+      <input type="text" class="search" id="search-input" placeholder="제목, 작성자, 태그 검색...">
+      <div class="filter-chips" id="filter-chips">
+        <button class="filter-chip active" data-format="all">전체</button>
+        <button class="filter-chip" data-format="vrm">VRM</button>
+        <button class="filter-chip" data-format="pmx">PMX</button>
+        <button class="filter-chip" data-format="pmd">PMD</button>
+      </div>
+      <a href="submit.html" class="btn-primary" style="text-decoration:none;">+ 새 모델 올리기</a>
+    </div>
+
+    <section id="card-grid" class="card-grid" aria-live="polite"></section>
+    <div id="empty-state" class="empty-state hidden">
+      <div class="big">📦</div>
+      <div>아직 게시된 모델이 없습니다.</div>
+      <div style="margin-top:8px; font-size:12px;">첫 번째 게시물을 올려보세요.</div>
+    </div>
+  </main>
+  <div class="toast-host"></div>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/",
+      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.1.0/lib/three-vrm.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="js/list.js"></script>
+</body>
+</html>

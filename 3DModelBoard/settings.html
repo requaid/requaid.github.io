@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta name="referrer" content="no-referrer">
+  <title>3D Model Board — 설정</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container">
+    <h1 style="margin:0 0 16px;">설정</h1>
+
+    <div class="warning-banner">
+      <span class="icon">🔒</span>
+      <span>
+        <strong>PAT는 이 탭 안에서만 메모리에 보관</strong>되며 저장되지 않습니다.
+        페이지를 닫거나 새로고침하면 사라지므로 게시 직전에 입력하세요.
+        <br>권한 최소화: fine-grained PAT + <em>대상 리포(fork)</em> + <em>Contents R/W, Pull requests R/W, Metadata R</em>만 체크하세요.
+      </span>
+    </div>
+
+    <div class="form-card">
+      <h2>리포지토리</h2>
+      <div class="form-field">
+        <label for="f-owner">Upstream Owner (github 사용자명)</label>
+        <input type="text" id="f-owner" placeholder="예: yourusername">
+        <div class="form-help">PR의 대상 리포 소유자입니다. fork가 아닌 원본 리포의 소유자.</div>
+      </div>
+      <div class="form-field">
+        <label for="f-repo">Repository 이름</label>
+        <input type="text" id="f-repo" placeholder="3DModelBoard">
+      </div>
+      <div class="form-field">
+        <label for="f-branch">Base 브랜치</label>
+        <input type="text" id="f-branch" placeholder="main">
+      </div>
+      <div class="form-actions">
+        <button id="save-repo" class="btn-primary">저장</button>
+      </div>
+    </div>
+
+    <div class="form-card" style="margin-top:16px;">
+      <h2>작성자</h2>
+      <div class="form-field">
+        <label for="f-author">기본 작성자명(닉네임)</label>
+        <input type="text" id="f-author" placeholder="anonymous" maxlength="40">
+        <div class="form-help">공개 리포에 영구 기록됩니다. 실명·이메일 금지.</div>
+      </div>
+      <div class="form-actions">
+        <button id="save-author" class="btn-primary">저장</button>
+      </div>
+    </div>
+
+    <div class="form-card" style="margin-top:16px;">
+      <h2>GitHub PAT (세션 전용)</h2>
+      <div class="form-field">
+        <label for="f-token">Personal Access Token (fine-grained 권장)</label>
+        <input type="password" id="f-token" placeholder="github_pat_... 또는 ghp_..." autocomplete="off" spellcheck="false">
+        <div class="form-help">
+          입력값은 탭의 JS 메모리에만 보관됩니다. 저장소(localStorage/IndexedDB/쿠키) 어디에도 저장되지 않습니다.<br>
+          PAT 발급: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens.
+        </div>
+      </div>
+      <div class="form-actions">
+        <button id="verify-token" class="btn-secondary">연결 테스트</button>
+        <button id="clear-token" class="btn-danger">토큰 지우기</button>
+      </div>
+      <div id="token-status" class="form-help" style="margin-top:8px;"></div>
+    </div>
+
+    <div style="margin-top:20px; text-align:center;">
+      <a href="index.html">← 목록으로</a>
+    </div>
+  </main>
+  <div class="toast-host"></div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/",
+      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.1.0/lib/three-vrm.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="js/settings.js"></script>
+</body>
+</html>

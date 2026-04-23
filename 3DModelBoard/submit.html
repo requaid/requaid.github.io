@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com https://uploads.github.com https://cdn.jsdelivr.net; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta name="referrer" content="no-referrer">
+  <title>3D Model Board — 글쓰기</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container">
+    <h1 style="margin:0 0 16px;">새 모델 올리기</h1>
+
+    <div class="warning-banner">
+      <span class="icon">⚠️</span>
+      <span>
+        <strong>이 게시판의 모든 내용은 공개 GitHub 리포지토리에 영구 공개됩니다.</strong>
+        실명·이메일·개인정보가 담긴 파일을 업로드하지 마세요.
+        개인 보관용이라면 <em>내 브라우저에 저장</em>을 선택하세요.
+      </span>
+    </div>
+
+    <div class="form-layout">
+      <div class="form-card">
+        <h2>1. 모델 파일</h2>
+        <label class="file-drop" id="model-drop">
+          <div class="big">📦</div>
+          <div>모델 파일을 드롭하거나 클릭하여 선택</div>
+          <div class="hint">.vrm / .pmx / .pmd · 최대 100MB · 25MB 초과 시 PR 불가</div>
+          <input type="file" id="model-input" accept=".vrm,.pmx,.pmd">
+        </label>
+        <div id="model-info" class="form-help" style="margin-top:8px;"></div>
+
+        <h2 style="margin-top:16px;">2. 정보</h2>
+        <div class="form-field">
+          <label for="f-title">제목</label>
+          <input type="text" id="f-title" maxlength="120" placeholder="예: My VRM Character">
+        </div>
+        <div class="form-field">
+          <label for="f-author">작성자</label>
+          <input type="text" id="f-author" maxlength="40" placeholder="anonymous">
+          <div class="form-help">공개 리포에 영구 기록됩니다.</div>
+        </div>
+        <div class="form-field">
+          <label for="f-tags">태그 (쉼표 구분, 최대 8개)</label>
+          <input type="text" id="f-tags" placeholder="vrm, anime, cute">
+        </div>
+        <div class="form-field">
+          <label for="f-desc">설명</label>
+          <textarea id="f-desc" maxlength="2000" placeholder="모델에 대한 간단한 설명..."></textarea>
+        </div>
+
+        <h2 style="margin-top:16px;">3. 썸네일</h2>
+        <div class="thumb-preview-row">
+          <div class="thumb-preview" id="thumb-preview"></div>
+          <div class="thumb-actions">
+            <button id="btn-recapture" class="btn-secondary">📷 다시 찍기</button>
+            <label class="btn-secondary" style="text-align:center; cursor:pointer;">
+              🖼 이미지 업로드
+              <input type="file" id="thumb-input" accept=".png,.jpg,.jpeg,.webp" style="display:none;">
+            </label>
+          </div>
+        </div>
+        <div class="form-help" style="margin-top:6px;">자동 스냅샷이 기본입니다. 원하시면 이미지를 직접 업로드해 대체하세요.</div>
+      </div>
+
+      <div class="form-card">
+        <h2>미리보기</h2>
+        <div class="preview-viewer">
+          <canvas id="preview-canvas"></canvas>
+          <div class="viewer-overlay active" id="preview-overlay" style="background:rgba(20,20,28,.6);">
+            <div style="font-size:13px; color:var(--text-dim); text-align:center; padding:20px;">
+              모델 파일을 선택하면<br>여기에 미리보기가 표시됩니다.
+            </div>
+          </div>
+        </div>
+        <div class="form-help" style="text-align:center;">드래그로 회전, 휠로 확대/축소</div>
+
+        <h2 style="margin-top:20px;">4. 저장 방법</h2>
+        <div class="form-actions">
+          <button id="btn-save-local" class="btn-secondary" disabled>💾 내 브라우저에 저장</button>
+          <button id="btn-submit-pr" class="btn-primary" disabled>🚀 PR로 공유하기</button>
+        </div>
+        <div class="form-help" style="margin-top:8px;">
+          PR로 공유하려면 <a href="settings.html">설정 페이지</a>에서 리포 정보와 PAT를 먼저 준비하세요.
+        </div>
+        <div id="log" class="progress-log hidden"></div>
+      </div>
+    </div>
+  </main>
+  <div class="toast-host"></div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/",
+      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.1.0/lib/three-vrm.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="js/submit.js"></script>
+</body>
+</html>
