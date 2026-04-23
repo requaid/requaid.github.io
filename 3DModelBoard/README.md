@@ -15,12 +15,14 @@ GitHub Pages(github.io)에서 동작하는 VRM/MMD 모델 뷰어 게시판입니
 
 ## 📖 매뉴얼
 
-사용자 유형에 따라 읽어야 할 문서가 다릅니다.
+사용자 유형과 숙련도에 따라 읽어야 할 문서가 다릅니다. **컴퓨터·깃허브가 처음이면 "초보자용" 문서부터** 보세요.
 
-| 유형 | 문서 | 내용 |
-| --- | --- | --- |
-| 🔍 **구경만 하는 분 (리더)** | **[docs/USER.md](docs/USER.md)** | 목록·뷰어·모션 조작·드래그&드롭·개인용 로컬 저장 |
-| ✍ **작성자 / 운영자** | **[docs/AUTHOR.md](docs/AUTHOR.md)** | PAT 발급·글쓰기·PR 플로우·운영 체크리스트·보안 메모 |
+| 유형 | 숙련도 | 문서 | 내용 |
+| --- | --- | --- | --- |
+| 🔍 **구경만 하는 분 (리더)** | 초보자 | **[docs/BEGINNER-USER.md](docs/BEGINNER-USER.md)** | 용어 풀이·단계별 조작법·프라이버시·자주 겪는 문제 (매우 상세) |
+| 🔍 구경만 하는 분 (리더) | 익숙한 분 | [docs/USER.md](docs/USER.md) | 간결 요약: 목록·뷰어·모션·드래그&드롭·로컬 저장 |
+| ✍ **작성자 (글을 올리고 싶은 분)** | **GitHub 초보자** | **[docs/BEGINNER-AUTHOR.md](docs/BEGINNER-AUTHOR.md)** | 계정 만들기·fork·PAT 발급·설정·글쓰기·배경·PR 승인·문제 해결 (매우 상세) |
+| ✍ 작성자 / 운영자 | 익숙한 분 | [docs/AUTHOR.md](docs/AUTHOR.md) | 간결 요약: PAT 발급·PR 플로우·운영 체크리스트·보안 메모 |
 
 ---
 
@@ -109,8 +111,10 @@ npx http-server -p 8000 -c-1
 ├── posts/<slug>/          # PR로 추가되는 게시물 폴더
 ├── assets/placeholder.svg
 └── docs/
-    ├── USER.md            # 리더용 매뉴얼
-    └── AUTHOR.md          # 작성자·운영자용 매뉴얼
+    ├── USER.md              # 리더용 간결 매뉴얼
+    ├── BEGINNER-USER.md     # 리더용 초보자 상세 가이드
+    ├── AUTHOR.md            # 작성자·운영자용 간결 매뉴얼
+    └── BEGINNER-AUTHOR.md   # 작성자용 GitHub 초보자 상세 가이드
 ```
 
 전체 파일 구조는 [docs/AUTHOR.md §8](docs/AUTHOR.md#8-폴더-구조)를 참고하세요.

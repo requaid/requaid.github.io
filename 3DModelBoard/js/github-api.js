@@ -139,7 +139,7 @@ export function textToBase64(text) {
   return btoa(binary);
 }
 
-export async function submitPostPR({ postId, title, description, author, tags, format, modelBlob, modelExt, thumbnailDataURL, onLog }) {
+export async function submitPostPR({ postId, title, description, author, tags, format, modelBlob, modelExt, thumbnailDataURL, bgBlob, bgExt, bgURL, onLog }) {
   const log = (msg, type) => { if (onLog) onLog(msg, type || 'info'); };
 
   const cfg = await getConfig();
@@ -165,6 +165,7 @@ export async function submitPostPR({ postId, title, description, author, tags, f
   const modelPath = postDir + 'model.' + modelExt;
   const thumbPath = postDir + 'thumbnail.png';
   const metaPath = postDir + 'meta.json';
+  const bgPath = (bgBlob && bgExt) ? (postDir + 'background.' + bgExt) : null;
 
   const meta = {
     id: postId,
@@ -175,6 +176,7 @@ export async function submitPostPR({ postId, title, description, author, tags, f
     format,
     modelPath,
     thumbnail: thumbPath,
+    background: null,
     createdAt: new Date().toISOString(),
   };
 
@@ -198,6 +200,19 @@ export async function submitPostPR({ postId, title, description, author, tags, f
     meta.thumbnail = thumbPath;
   } else {
     meta.thumbnail = null;
+  }
+
+  if (bgPath && bgBlob) {
+    log('배경 이미지 업로드...');
+    await putFile(login, cfg.repo, {
+      path: bgPath,
+      contentBase64: await blobToBase64(bgBlob),
+      message: `post: add background for ${postId}`,
+      branch: branchName,
+    });
+    meta.background = { type: 'image', path: bgPath };
+  } else if (bgURL) {
+    meta.background = { type: 'url', url: bgURL };
   }
 
   log('meta.json 업로드...');

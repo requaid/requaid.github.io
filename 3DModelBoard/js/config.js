@@ -14,6 +14,7 @@ export const CONFIG = Object.freeze({
   MAX_LOCAL_SIZE: 100 * 1024 * 1024,
   MAX_MOTION_SIZE: 10 * 1024 * 1024,
   MAX_THUMB_SIZE:   2 * 1024 * 1024,
+  MAX_BG_SIZE:      5 * 1024 * 1024,
 
   MODEL_EXT:  ['vrm', 'pmx', 'pmd'],
   MOTION_EXT: ['vmd', 'bvh'],
@@ -29,6 +30,7 @@ export const CONFIG = Object.freeze({
 
   PATH_WHITELIST: /^posts\/[A-Za-z0-9_\-]+\/[A-Za-z0-9_\-.]+$/,
   IMAGE_PATH_WHITELIST: /^(posts\/[A-Za-z0-9_\-]+\/[A-Za-z0-9_\-.]+\.(?:png|jpg|jpeg|webp)|assets\/[A-Za-z0-9_\-.]+\.(?:png|jpg|jpeg|webp))$/i,
+  BG_PATH_WHITELIST: /^posts\/[A-Za-z0-9_\-]+\/background\.(?:png|jpg|jpeg|webp)$/i,
 });
 
 export const TOKEN = {

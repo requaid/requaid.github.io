@@ -31,6 +31,32 @@ export function isSafeModelPath(path) {
   return typeof path === 'string' && CONFIG.PATH_WHITELIST.test(path);
 }
 
+export function isSafeBgPath(path) {
+  return typeof path === 'string' && CONFIG.BG_PATH_WHITELIST.test(path);
+}
+
+export function isValidHttpsBgURL(s) {
+  if (typeof s !== 'string' || s.length > 2000) return false;
+  let u;
+  try { u = new URL(s); } catch { return false; }
+  if (u.protocol !== 'https:') return false;
+  const host = u.hostname.toLowerCase();
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]') return false;
+  if (/^10\./.test(host) || /^192\.168\./.test(host) || /^172\.(1[6-9]|2\d|3[01])\./.test(host)) return false;
+  return true;
+}
+
+export function normalizeBackground(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  if (raw.type === 'image' && isSafeBgPath(raw.path)) {
+    return { type: 'image', path: raw.path };
+  }
+  if (raw.type === 'url' && isValidHttpsBgURL(raw.url)) {
+    return { type: 'url', url: raw.url };
+  }
+  return null;
+}
+
 export function slugify(s) {
   return String(s || '')
     .toLowerCase()

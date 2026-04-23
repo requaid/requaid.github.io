@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { localPosts } from './idb.js';
-import { isSafeImagePath, isSafeModelPath, clampText, sanitizeTags } from './sanitize.js';
+import { isSafeImagePath, isSafeModelPath, clampText, sanitizeTags, normalizeBackground } from './sanitize.js';
 
 function normalizeRemote(raw) {
   if (!raw || typeof raw !== 'object') return null;
@@ -21,11 +21,14 @@ function normalizeRemote(raw) {
     format,
     modelPath,
     thumbnail: thumb,
+    background: normalizeBackground(raw.background),
     createdAt: String(raw.createdAt || ''),
   };
 }
 
 function normalizeLocal(raw) {
+  const bgBlob = raw.backgroundBlob instanceof Blob ? raw.backgroundBlob : null;
+  const bgURL = typeof raw.backgroundURL === 'string' ? raw.backgroundURL : null;
   return {
     id: raw.id,
     source: 'local',
@@ -37,6 +40,9 @@ function normalizeLocal(raw) {
     modelBlob: raw.modelBlob,
     modelName: raw.modelName,
     thumbnailDataURL: raw.thumbnailDataURL || null,
+    backgroundBlob: bgBlob,
+    backgroundExt: raw.backgroundExt || null,
+    backgroundURL: bgURL,
     createdAt: raw.createdAt,
   };
 }

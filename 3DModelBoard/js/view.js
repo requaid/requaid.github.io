@@ -14,6 +14,7 @@ const postId = params.get('id');
 
 const container = document.getElementById('viewer-container');
 const canvas = document.getElementById('viewer-canvas');
+const bgLayer = document.getElementById('viewer-bg');
 const overlay = document.getElementById('overlay');
 const overlayText = document.getElementById('overlay-text');
 const dropzone = document.getElementById('dropzone');
@@ -32,6 +33,29 @@ function hideOverlay() { overlay.classList.remove('active'); }
 
 function setActiveMotionButton(name) {
   motionBtns.forEach(b => b.classList.toggle('active', b.dataset.motion === name));
+}
+
+let bgObjectUrl = null;
+window.addEventListener('beforeunload', () => {
+  if (bgObjectUrl) { try { URL.revokeObjectURL(bgObjectUrl); } catch {} bgObjectUrl = null; }
+});
+
+function applyBackground(post, ctx) {
+  let url = null;
+  if (post.source === 'local' && post.backgroundBlob) {
+    bgObjectUrl = URL.createObjectURL(post.backgroundBlob);
+    url = bgObjectUrl;
+  } else if (post.source === 'local' && post.backgroundURL) {
+    url = post.backgroundURL;
+  } else if (post.background && post.background.type === 'image' && post.background.path) {
+    url = post.background.path;
+  } else if (post.background && post.background.type === 'url' && post.background.url) {
+    url = post.background.url;
+  }
+  if (url) {
+    bgLayer.style.backgroundImage = 'url(' + JSON.stringify(url) + ')';
+    ctx.scene.background = null;
+  }
 }
 
 if (!postId) {
@@ -55,6 +79,8 @@ async function bootstrap(id) {
   setText(metaEl, metaParts.join(' · '));
 
   const ctx = createViewer({ canvas, container });
+
+  applyBackground(post, ctx);
 
   let modelUrl;
   let revokeUrl = null;

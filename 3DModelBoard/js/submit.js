@@ -6,7 +6,7 @@ import { loadVRM, loadMMD } from './viewer-vrm.js';
 import { captureFromRenderer, normalizeImageFile, resizeDataURL, dataURLToBase64 } from './thumbnail.js';
 import { mountHeader } from './header.js';
 import { toast, toastOk, toastError } from './ui.js';
-import { setText, getExt, isModelExt, isImageExt, checkMagicBytes, slugify, sanitizeTags, clampText, formatBytes } from './sanitize.js';
+import { setText, getExt, isModelExt, isImageExt, checkMagicBytes, slugify, sanitizeTags, clampText, formatBytes, isValidHttpsBgURL } from './sanitize.js';
 import { submitPostPR } from './github-api.js';
 
 mountHeader('submit');
@@ -28,6 +28,14 @@ const logBox = document.getElementById('log');
 const previewCanvas = document.getElementById('preview-canvas');
 const previewContainer = document.querySelector('.preview-viewer');
 const previewOverlay = document.getElementById('preview-overlay');
+const previewBg = document.getElementById('preview-bg');
+
+const bgModeRadios = document.querySelectorAll('input[name="bg-mode"]');
+const bgImageField = document.getElementById('bg-image-field');
+const bgUrlField = document.getElementById('bg-url-field');
+const bgImageInput = document.getElementById('bg-image-input');
+const bgUrlInput = document.getElementById('bg-url-input');
+const bgPreview = document.getElementById('bg-preview');
 
 (async () => {
   authorInput.value = (await settings.get('authorName')) || '';
@@ -40,6 +48,7 @@ let state = {
   viewer: null,
   thumbDataURL: null,
   modelLoaded: false,
+  bg: { mode: 'none', blob: null, ext: null, url: '', dataURL: null },
 };
 
 function log(msg, type) {
@@ -128,6 +137,7 @@ async function loadIntoPreview(file) {
     else await loadMMD(viewer, url);
     state.modelLoaded = true;
     previewOverlay.classList.remove('active');
+    applyBgToPreview();
     setTimeout(() => captureAutoThumb(), 300);
   } catch (e) {
     console.error(e);
@@ -177,13 +187,92 @@ thumbInput.addEventListener('change', async () => {
   }
 });
 
+function applyBgToPreview() {
+  let url = null;
+  if (state.bg.mode === 'image' && state.bg.dataURL) url = state.bg.dataURL;
+  else if (state.bg.mode === 'url' && isValidHttpsBgURL(state.bg.url)) url = state.bg.url;
+
+  if (url) {
+    const css = 'url(' + JSON.stringify(url) + ')';
+    previewBg.style.backgroundImage = css;
+    bgPreview.style.backgroundImage = css;
+    bgPreview.classList.remove('hidden');
+    if (state.viewer) state.viewer.scene.background = null;
+  } else {
+    previewBg.style.backgroundImage = '';
+    bgPreview.style.backgroundImage = '';
+    bgPreview.classList.add('hidden');
+  }
+}
+
+bgModeRadios.forEach(r => r.addEventListener('change', () => {
+  state.bg.mode = r.value;
+  bgImageField.classList.toggle('hidden', r.value !== 'image');
+  bgUrlField.classList.toggle('hidden', r.value !== 'url');
+  applyBgToPreview();
+}));
+
+bgImageInput.addEventListener('change', async () => {
+  const file = bgImageInput.files?.[0];
+  if (!file) return;
+  const ext = getExt(file.name);
+  if (!isImageExt(ext)) { toastError('이미지 형식만 가능합니다.'); bgImageInput.value = ''; return; }
+  if (file.size > CONFIG.MAX_BG_SIZE) {
+    toastError('배경 이미지가 너무 큽니다 (' + formatBytes(file.size) + ' > ' + formatBytes(CONFIG.MAX_BG_SIZE) + ')');
+    bgImageInput.value = '';
+    return;
+  }
+  const magicOk = await checkMagicBytes(file, ext);
+  if (!magicOk) { toastError('배경 이미지 헤더 검증 실패.'); bgImageInput.value = ''; return; }
+  try {
+    const dataURL = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(fr.error);
+      fr.readAsDataURL(file);
+    });
+    state.bg.blob = file;
+    state.bg.ext = ext === 'jpeg' ? 'jpg' : ext;
+    state.bg.dataURL = dataURL;
+    applyBgToPreview();
+    toastOk('배경 이미지 적용');
+  } catch (e) {
+    console.error(e);
+    toastError('배경 이미지 처리 실패');
+  }
+});
+
+bgUrlInput.addEventListener('input', () => {
+  const v = bgUrlInput.value.trim();
+  state.bg.url = v;
+  if (!v) { applyBgToPreview(); return; }
+  if (!isValidHttpsBgURL(v)) {
+    previewBg.style.backgroundImage = '';
+    bgPreview.style.backgroundImage = '';
+    bgPreview.classList.add('hidden');
+    return;
+  }
+  applyBgToPreview();
+});
+
 function gatherPostData() {
   const title = clampText(titleInput.value.trim(), 120);
   const author = clampText(authorInput.value.trim() || 'anonymous', 40);
   const tags = sanitizeTags(tagsInput.value);
   const description = clampText(descInput.value, 2000);
   const id = slugify(title) + '-' + Date.now().toString(36);
-  return { id, title, author, tags, description, format: state.format, modelBlob: state.file, modelExt: state.ext };
+  const bg = resolveBg();
+  return { id, title, author, tags, description, format: state.format, modelBlob: state.file, modelExt: state.ext, bg };
+}
+
+function resolveBg() {
+  if (state.bg.mode === 'image' && state.bg.blob && state.bg.ext) {
+    return { mode: 'image', blob: state.bg.blob, ext: state.bg.ext, dataURL: state.bg.dataURL };
+  }
+  if (state.bg.mode === 'url' && isValidHttpsBgURL(state.bg.url)) {
+    return { mode: 'url', url: state.bg.url };
+  }
+  return { mode: 'none' };
 }
 
 btnSaveLocal.addEventListener('click', async () => {
@@ -200,6 +289,9 @@ btnSaveLocal.addEventListener('click', async () => {
       modelBlob: state.file,
       modelName: state.file.name,
       thumbnailDataURL: state.thumbDataURL,
+      backgroundBlob: data.bg.mode === 'image' ? data.bg.blob : null,
+      backgroundExt:  data.bg.mode === 'image' ? data.bg.ext  : null,
+      backgroundURL:  data.bg.mode === 'url'   ? data.bg.url  : null,
       createdAt: new Date().toISOString(),
     });
     await settings.set('authorName', data.author);
@@ -238,6 +330,9 @@ btnSubmitPR.addEventListener('click', async () => {
       modelBlob: data.modelBlob,
       modelExt: data.modelExt,
       thumbnailDataURL: state.thumbDataURL,
+      bgBlob: data.bg.mode === 'image' ? data.bg.blob : null,
+      bgExt:  data.bg.mode === 'image' ? data.bg.ext  : null,
+      bgURL:  data.bg.mode === 'url'   ? data.bg.url  : null,
       onLog: log,
     });
     await settings.set('authorName', data.author);

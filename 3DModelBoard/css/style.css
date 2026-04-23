@@ -299,6 +299,18 @@ a:hover { text-decoration: underline; }
   width: 100%;
   height: 100%;
   display: block;
+  z-index: 1;
+}
+
+.viewer-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--bg-panel);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  pointer-events: none;
 }
 
 .viewer-overlay {
@@ -525,9 +537,57 @@ a:hover { text-decoration: underline; }
   margin-bottom: 12px;
 }
 .preview-viewer canvas {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: block;
+  z-index: 1;
+}
+.preview-viewer .viewer-bg { border-radius: var(--radius); }
+
+.bg-mode {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.bg-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.bg-mode input[type=radio] { margin: 0; }
+.bg-field { margin-top: 6px; }
+.bg-field input[type=text] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: inherit;
+}
+.bg-field input[type=text]:focus { outline: none; border-color: var(--accent); }
+.bg-preview {
+  width: 160px;
+  height: 90px;
+  margin-top: 8px;
+  background: var(--bg-panel-2) center/cover no-repeat;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.bg-warn {
+  background: rgba(255,179,71,.08);
+  border: 1px solid rgba(255,179,71,.3);
+  color: #ffd59a;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  font-size: 11px;
+  margin-top: 6px;
 }
 
 .thumb-preview-row {

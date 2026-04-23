@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com https://uploads.github.com https://cdn.jsdelivr.net; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com https://uploads.github.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta name="referrer" content="no-referrer">
   <title>3D Model Board — 글쓰기</title>
   <link rel="stylesheet" href="css/style.css">
@@ -63,11 +63,31 @@
           </div>
         </div>
         <div class="form-help" style="margin-top:6px;">자동 스냅샷이 기본입니다. 원하시면 이미지를 직접 업로드해 대체하세요.</div>
+
+        <h2 style="margin-top:16px;">4. 배경 (선택)</h2>
+        <div class="bg-mode">
+          <label><input type="radio" name="bg-mode" value="none" checked> 없음</label>
+          <label><input type="radio" name="bg-mode" value="image"> 이미지 업로드</label>
+          <label><input type="radio" name="bg-mode" value="url"> 외부 URL</label>
+        </div>
+        <div id="bg-image-field" class="bg-field hidden">
+          <label class="btn-secondary" style="display:inline-block; cursor:pointer;">
+            🏞 배경 이미지 선택
+            <input type="file" id="bg-image-input" accept=".png,.jpg,.jpeg,.webp" style="display:none;">
+          </label>
+          <div class="form-help" style="margin-top:4px;">최대 5MB · PNG / JPG / WebP. PR 업로드 시 posts/&lt;id&gt;/background.ext 로 저장됩니다.</div>
+        </div>
+        <div id="bg-url-field" class="bg-field hidden">
+          <input type="text" id="bg-url-input" placeholder="https://example.com/background.jpg" maxlength="2000">
+          <div class="bg-warn">⚠ 외부 URL은 뷰어가 로드 시 해당 서버로 HTTP 요청을 보냅니다. 신뢰할 수 있는 HTTPS 호스트만 사용하세요.</div>
+        </div>
+        <div id="bg-preview" class="bg-preview hidden"></div>
       </div>
 
       <div class="form-card">
         <h2>미리보기</h2>
         <div class="preview-viewer">
+          <div class="viewer-bg" id="preview-bg"></div>
           <canvas id="preview-canvas"></canvas>
           <div class="viewer-overlay active" id="preview-overlay" style="background:rgba(20,20,28,.6);">
             <div style="font-size:13px; color:var(--text-dim); text-align:center; padding:20px;">
@@ -77,7 +97,7 @@
         </div>
         <div class="form-help" style="text-align:center;">드래그로 회전, 휠로 확대/축소</div>
 
-        <h2 style="margin-top:20px;">4. 저장 방법</h2>
+        <h2 style="margin-top:20px;">5. 저장 방법</h2>
         <div class="form-actions">
           <button id="btn-save-local" class="btn-secondary" disabled>💾 내 브라우저에 저장</button>
           <button id="btn-submit-pr" class="btn-primary" disabled>🚀 PR로 공유하기</button>
