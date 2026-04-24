@@ -96,23 +96,12 @@ async function bootstrap(id) {
 
   try {
     if (post.format === 'vrm') {
-      // VRM: GLTFLoader가 URL을 요구하므로 blob URL 사용
-      let modelUrl;
-      let revokeUrl = null;
-      if (post.source === 'local') {
-        modelUrl = URL.createObjectURL(post.modelBlob);
-        revokeUrl = () => URL.revokeObjectURL(modelUrl);
-      } else {
-        modelUrl = post.modelPath;
-      }
-      try {
-        await withTimeout(
-          loadVRM(ctx, modelUrl, { onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%') }),
-          MODEL_LOAD_TIMEOUT_MS, '모델'
-        );
-      } finally {
-        if (revokeUrl) revokeUrl();
-      }
+      // VRM: 로컬은 Blob 직접 전달(GLTFLoader.parse 사용), 원격은 URL 문자열
+      const modelTarget = post.source === 'local' ? post.modelBlob : post.modelPath;
+      await withTimeout(
+        loadVRM(ctx, modelTarget, { onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%') }),
+        MODEL_LOAD_TIMEOUT_MS, '모델'
+      );
     } else {
       // PMX/PMD: 로컬은 Blob 직접 전달(fetch(blob:) CSP 우회), 원격은 URL 문자열
       const modelTarget = post.source === 'local' ? post.modelBlob : post.modelPath;

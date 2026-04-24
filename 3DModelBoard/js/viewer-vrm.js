@@ -18,15 +18,26 @@ function createLocalPmxManager() {
   return m;
 }
 
-export async function loadVRM(ctx, url, { onProgress } = {}) {
+export async function loadVRM(ctx, urlOrBlob, { onProgress } = {}) {
   const loader = new GLTFLoader();
   loader.register(parser => new VRMLoaderPlugin(parser));
 
-  const gltf = await new Promise((resolve, reject) => {
-    loader.load(url, resolve, (p) => {
-      if (p.total > 0 && onProgress) onProgress(p.loaded / p.total);
-    }, reject);
-  });
+  let gltf;
+  if (urlOrBlob instanceof Blob) {
+    // 로컬 Blob — ArrayBuffer로 직접 파싱. fetch(blob:) CSP 문제 완전 우회.
+    const buffer = await urlOrBlob.arrayBuffer();
+    if (onProgress) onProgress(1);
+    gltf = await new Promise((resolve, reject) => {
+      loader.parse(buffer, '', resolve, reject);
+    });
+  } else {
+    // 원격 URL — 기존 load() 사용
+    gltf = await new Promise((resolve, reject) => {
+      loader.load(urlOrBlob, resolve, (p) => {
+        if (p.total > 0 && onProgress) onProgress(p.loaded / p.total);
+      }, reject);
+    });
+  }
 
   const vrm = gltf.userData.vrm;
   if (!vrm) throw new Error('VRM 데이터를 찾을 수 없습니다.');

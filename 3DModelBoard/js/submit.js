@@ -140,10 +140,8 @@ async function loadIntoPreview(file) {
 
   try {
     if (state.ext === 'vrm') {
-      const url = URL.createObjectURL(file);
-      try {
-        await withTimeout(loadVRM(viewer, url), PREVIEW_LOAD_TIMEOUT_MS, '모델');
-      } finally { URL.revokeObjectURL(url); }
+      // VRM: Blob 직접 전달 → GLTFLoader.parse() 사용, fetch(blob:) CSP 우회
+      await withTimeout(loadVRM(viewer, file), PREVIEW_LOAD_TIMEOUT_MS, '모델');
     } else {
       // PMX/PMD: Blob 직접 전달 → fetch(blob:) CSP 우회
       await withTimeout(loadMMD(viewer, file, { ext: state.ext }), PREVIEW_LOAD_TIMEOUT_MS, '모델');
