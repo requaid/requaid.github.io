@@ -95,8 +95,13 @@ async function bootstrap(id) {
     if (post.format === 'vrm') {
       await loadVRM(ctx, modelUrl, { onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%') });
     } else {
-      await loadMMD(ctx, modelUrl, { onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%') });
-    }
+      // local post는 blob URL이므로 ext 전달
+      const modelExt = post.source === 'local' ? post.format : null;
+      await loadMMD(ctx, modelUrl, {
+        onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%'),
+        ext: modelExt,
+      });
+}
   } catch (e) {
     console.error(e);
     showOverlay('모델 로딩 실패: ' + (e.message || e));

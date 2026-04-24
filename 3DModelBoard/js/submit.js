@@ -75,8 +75,8 @@ function log(msg, type) {
 function updateSaveButtons() {
   const hasTitle = titleInput.value.trim().length > 0;
   const ready = state.modelLoaded && hasTitle;
-  // btnSaveLocal.disabled = !ready || state.file.size > CONFIG.MAX_LOCAL_SIZE;
-  // btnSubmitPR.disabled = !ready || state.file.size > CONFIG.MAX_REPO_SIZE;
+  btnSaveLocal.disabled = !ready || state.file.size > CONFIG.MAX_LOCAL_SIZE;
+  btnSubmitPR.disabled = !ready || state.file.size > CONFIG.MAX_REPO_SIZE;
 }
 
 titleInput.addEventListener('input', updateSaveButtons);
@@ -100,10 +100,10 @@ async function handleModelFile(file) {
   const ext = getExt(file.name);
   if (!isModelExt(ext)) { toastError('지원하지 않는 모델 형식입니다.'); return; }
 
-  // if (file.size > CONFIG.MAX_LOCAL_SIZE) {
-  //   toastError('모델 파일이 너무 큽니다 (' + formatBytes(file.size) + ' > ' + formatBytes(CONFIG.MAX_LOCAL_SIZE) + ')');
-  //   return;
-  // }
+  if (file.size > CONFIG.MAX_LOCAL_SIZE) {
+    toastError('모델 파일이 너무 큽니다 (' + formatBytes(file.size) + ' > ' + formatBytes(CONFIG.MAX_LOCAL_SIZE) + ')');
+    return;
+  }
   const magicOk = await checkMagicBytes(file, ext);
   if (!magicOk) {
     toastError('파일 헤더 검증 실패: 올바른 ' + ext.toUpperCase() + ' 파일이 아닙니다.');
@@ -146,7 +146,7 @@ async function loadIntoPreview(file) {
   const url = URL.createObjectURL(file);
   try {
     if (state.ext === 'vrm') await loadVRM(viewer, url);
-    else await loadMMD(viewer, url);
+    else await loadMMD(viewer, url, { ext: state.ext });
     state.modelLoaded = true;
     previewOverlay.classList.remove('active');
     applyBgToPreview();

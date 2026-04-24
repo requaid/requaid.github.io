@@ -26,15 +26,28 @@ export async function loadVRM(ctx, url, { onProgress } = {}) {
   return vrm;
 }
 
-export async function loadMMD(ctx, url, { onProgress } = {}) {
+export async function loadMMD(ctx, url, { onProgress, ext } = {}) {
   const { MMDLoader } = await import('three/addons/loaders/MMDLoader.js');
   const loader = new MMDLoader();
-  const mesh = await new Promise((resolve, reject) => {
-    loader.load(url, resolve, (p) => {
-      if (p.total > 0 && onProgress) onProgress(p.loaded / p.total);
-    }, reject);
-  });
-  ctx.scene.add(mesh);
+
+  // blob URL은 확장자가 없으므로 ArrayBuffer로 직접 파싱
+  let mesh;
+  if (url.startsWith('blob:') && ext) {
+    const res = await fetch(url);
+    const buffer = await res.arrayBuffer();
+    mesh = (ext === 'pmd')
+      ? loader.parsePMD(buffer, true)
+      : loader.parsePMX(buffer, true);
+    ctx.scene.add(mesh);
+  } else {
+    mesh = await new Promise((resolve, reject) => {
+      loader.load(url, resolve,
+        (p) => { if (p.total > 0 && onProgress) onProgress(p.loaded / p.total); },
+        reject);
+    });
+    ctx.scene.add(mesh);
+  }
+  
   ctx.currentModel = mesh;
   ctx.modelFormat = 'mmd';
   ctx.mixer = new THREE.AnimationMixer(mesh);
