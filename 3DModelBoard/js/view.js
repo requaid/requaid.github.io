@@ -82,32 +82,34 @@ async function bootstrap(id) {
 
   applyBackground(post, ctx);
 
-  let modelUrl;
-  let revokeUrl = null;
-  if (post.source === 'local') {
-    modelUrl = URL.createObjectURL(post.modelBlob);
-    revokeUrl = () => URL.revokeObjectURL(modelUrl);
-  } else {
-    modelUrl = post.modelPath;
-  }
-
   try {
     if (post.format === 'vrm') {
-      await loadVRM(ctx, modelUrl, { onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%') });
+      // VRM: GLTFLoader가 URL을 요구하므로 blob URL 사용
+      let modelUrl;
+      let revokeUrl = null;
+      if (post.source === 'local') {
+        modelUrl = URL.createObjectURL(post.modelBlob);
+        revokeUrl = () => URL.revokeObjectURL(modelUrl);
+      } else {
+        modelUrl = post.modelPath;
+      }
+      try {
+        await loadVRM(ctx, modelUrl, { onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%') });
+      } finally {
+        if (revokeUrl) revokeUrl();
+      }
     } else {
-      // local post는 blob URL이므로 ext 전달
-      const modelExt = post.source === 'local' ? post.format : null;
-      await loadMMD(ctx, modelUrl, {
+      // PMX/PMD: 로컬은 Blob 직접 전달(fetch(blob:) CSP 우회), 원격은 URL 문자열
+      const modelTarget = post.source === 'local' ? post.modelBlob : post.modelPath;
+      await loadMMD(ctx, modelTarget, {
         onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%'),
-        ext: modelExt,
+        ext: post.format,
       });
-}
+    }
   } catch (e) {
     console.error(e);
     showOverlay('모델 로딩 실패: ' + (e.message || e));
     return;
-  } finally {
-    if (revokeUrl) revokeUrl();
   }
   hideOverlay();
 

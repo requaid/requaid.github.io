@@ -132,10 +132,14 @@ async function loadIntoPreview(file) {
   const viewer = createViewer({ canvas: previewCanvas, container: previewContainer });
   state.viewer = viewer;
 
-  const url = URL.createObjectURL(file);
   try {
-    if (state.ext === 'vrm') await loadVRM(viewer, url);
-    else await loadMMD(viewer, url, { ext: state.ext });
+    if (state.ext === 'vrm') {
+      const url = URL.createObjectURL(file);
+      try { await loadVRM(viewer, url); } finally { URL.revokeObjectURL(url); }
+    } else {
+      // PMX/PMD: Blob 직접 전달 → fetch(blob:) CSP 우회
+      await loadMMD(viewer, file, { ext: state.ext });
+    }
     state.modelLoaded = true;
     previewOverlay.classList.remove('active');
     applyBgToPreview();
@@ -145,8 +149,6 @@ async function loadIntoPreview(file) {
     state.modelLoaded = false;
     previewOverlay.firstElementChild.textContent = '로딩 실패: ' + (e.message || e);
     toastError('모델 로딩 실패');
-  } finally {
-    URL.revokeObjectURL(url);
   }
 }
 

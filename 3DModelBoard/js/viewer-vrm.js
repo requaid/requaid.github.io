@@ -26,22 +26,24 @@ export async function loadVRM(ctx, url, { onProgress } = {}) {
   return vrm;
 }
 
-export async function loadMMD(ctx, url, { onProgress, ext } = {}) {
+export async function loadMMD(ctx, urlOrBlob, { onProgress, ext } = {}) {
   const { MMDLoader } = await import('three/addons/loaders/MMDLoader.js');
   const loader = new MMDLoader();
 
-  // blob URL은 확장자가 없으므로 ArrayBuffer로 직접 파싱
   let mesh;
-  if (url.startsWith('blob:') && ext) {
-    const res = await fetch(url);
-    const buffer = await res.arrayBuffer();
-    mesh = (ext === 'pmd')
+  // Blob/File 객체를 직접 받은 경우 — fetch() 없이 arrayBuffer()로 파싱
+  // (CSP connect-src에 blob: 없어도 동작)
+  if (urlOrBlob instanceof Blob) {
+    const buffer = await urlOrBlob.arrayBuffer();
+    const fmt = ext || (urlOrBlob.name ? urlOrBlob.name.split('.').pop().toLowerCase() : '');
+    mesh = (fmt === 'pmd')
       ? loader.parsePMD(buffer, true)
       : loader.parsePMX(buffer, true);
     ctx.scene.add(mesh);
   } else {
+    // 일반 URL (원격 게시물) — MMDLoader.load() 사용
     mesh = await new Promise((resolve, reject) => {
-      loader.load(url, resolve,
+      loader.load(urlOrBlob, resolve,
         (p) => { if (p.total > 0 && onProgress) onProgress(p.loaded / p.total); },
         reject);
     });
