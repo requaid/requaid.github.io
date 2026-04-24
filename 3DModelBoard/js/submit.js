@@ -75,8 +75,8 @@ function log(msg, type) {
 function updateSaveButtons() {
   const hasTitle = titleInput.value.trim().length > 0;
   const ready = state.modelLoaded && hasTitle;
-  btnSaveLocal.disabled = !ready || state.file.size > CONFIG.MAX_LOCAL_SIZE;
-  btnSubmitPR.disabled = !ready || state.file.size > CONFIG.MAX_REPO_SIZE;
+  btnSaveLocal.disabled = !ready;
+  btnSubmitPR.disabled = !ready;
 }
 
 titleInput.addEventListener('input', updateSaveButtons);
@@ -100,10 +100,6 @@ async function handleModelFile(file) {
   const ext = getExt(file.name);
   if (!isModelExt(ext)) { toastError('지원하지 않는 모델 형식입니다.'); return; }
 
-  if (file.size > CONFIG.MAX_LOCAL_SIZE) {
-    toastError('모델 파일이 너무 큽니다 (' + formatBytes(file.size) + ' > ' + formatBytes(CONFIG.MAX_LOCAL_SIZE) + ')');
-    return;
-  }
   const magicOk = await checkMagicBytes(file, ext);
   if (!magicOk) {
     toastError('파일 헤더 검증 실패: 올바른 ' + ext.toUpperCase() + ' 파일이 아닙니다.');
@@ -114,13 +110,6 @@ async function handleModelFile(file) {
   state.ext = ext;
   state.format = ext;
   setText(modelInfo, file.name + ' · ' + formatBytes(file.size));
-
-  if (file.size > CONFIG.MAX_REPO_SIZE) {
-    const sizeWarn = document.createElement('span');
-    sizeWarn.textContent = ' · ⚠ 25MB 초과 → PR 불가, 로컬 저장만 가능';
-    sizeWarn.style.color = 'var(--warn)';
-    modelInfo.appendChild(sizeWarn);
-  }
 
   if (!titleInput.value.trim()) {
     const base = file.name.replace(/\.[^.]+$/, '');
@@ -433,8 +422,6 @@ btnSaveLocal.addEventListener('click', async () => {
 
 btnSubmitPR.addEventListener('click', async () => {
   if (!state.modelLoaded || !state.file) return;
-  if (state.file.size > CONFIG.MAX_REPO_SIZE) { toastError('25MB 초과 — PR 불가'); return; }
-
   if (!TOKEN.has()) {
     if (!confirm('세션에 PAT가 없습니다. 설정 페이지로 이동할까요?')) return;
     location.href = 'settings.html';
