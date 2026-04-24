@@ -31,14 +31,15 @@ export async function loadMMD(ctx, urlOrBlob, { onProgress, ext } = {}) {
   const loader = new MMDLoader();
 
   let mesh;
-  // Blob/File 객체를 직접 받은 경우 — fetch() 없이 arrayBuffer()로 파싱
-  // (CSP connect-src에 blob: 없어도 동작)
   if (urlOrBlob instanceof Blob) {
+    // Blob/File 직접 전달 — fetch(blob:) 없이 arrayBuffer()로 읽어 내부 API로 파싱
+    // MMDLoader 공개 API에 parsePMX/parsePMD 없음 → _getParser() + meshBuilder.build() 사용
+    // meshBuilder.build()는 동기 함수로 SkinnedMesh를 직접 반환
     const buffer = await urlOrBlob.arrayBuffer();
     const fmt = ext || (urlOrBlob.name ? urlOrBlob.name.split('.').pop().toLowerCase() : '');
-    mesh = (fmt === 'pmd')
-      ? loader.parsePMD(buffer, true)
-      : loader.parsePMX(buffer, true);
+    const parser = loader._getParser();
+    const data = (fmt === 'pmd') ? parser.parsePmd(buffer, true) : parser.parsePmx(buffer, true);
+    mesh = loader.meshBuilder.setCrossOrigin(loader.crossOrigin).build(data, '', onProgress, () => {});
     ctx.scene.add(mesh);
   } else {
     // 일반 URL (원격 게시물) — MMDLoader.load() 사용
