@@ -3,6 +3,21 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { HUMANOID_BONES, PMX_BONE_MAP } from './bone-map.js';
 
+// 로컬 업로드 PMX/PMD는 텍스처가 함께 올라오지 않아 상대경로 요청이 404가 되고,
+// 실패가 MMDLoader 내부 pending 카운터에 남아 "무한 로딩"처럼 보인다.
+// 로컬 분기 전용 LoadingManager의 setURLModifier로 상대경로만 투명 1px PNG로 치환한다.
+const TRANSPARENT_1PX_PNG =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
+function createLocalPmxManager() {
+  const m = new THREE.LoadingManager();
+  m.setURLModifier((url) => {
+    if (/^(https?:|data:|blob:)/i.test(url)) return url;
+    return TRANSPARENT_1PX_PNG;
+  });
+  return m;
+}
+
 export async function loadVRM(ctx, url, { onProgress } = {}) {
   const loader = new GLTFLoader();
   loader.register(parser => new VRMLoaderPlugin(parser));
@@ -28,13 +43,22 @@ export async function loadVRM(ctx, url, { onProgress } = {}) {
 
 export async function loadMMD(ctx, urlOrBlob, { onProgress, ext } = {}) {
   const { MMDLoader } = await import('three/addons/loaders/MMDLoader.js');
-  const loader = new MMDLoader();
 
   let mesh;
   if (urlOrBlob instanceof Blob) {
-    // Blob/File 직접 전달 — fetch(blob:) 없이 arrayBuffer()로 읽어 내부 API로 파싱
-    // MMDLoader 공개 API에 parsePMX/parsePMD 없음 → _getParser() + meshBuilder.build() 사용
-    // meshBuilder.build()는 동기 함수로 SkinnedMesh를 직접 반환
+    // 로컬 Blob/File — 텍스처 상대경로 404 방지용 전용 LoadingManager 주입.
+    const mgr = createLocalPmxManager();
+    const loader = new MMDLoader(mgr);
+    if (loader.meshBuilder) {
+      loader.meshBuilder.manager = mgr;
+      if (loader.meshBuilder.textureLoader) loader.meshBuilder.textureLoader.manager = mgr;
+      if (loader.meshBuilder.tgaLoader) loader.meshBuilder.tgaLoader.manager = mgr;
+    }
+    // MMDLoader 공개 API에 parsePMX/parsePMD 없음 → _getParser() + meshBuilder.build() 사용.
+    // 향후 three.js 버전 업 시 내부 API 이름이 바뀌면 아래 가드가 명확한 에러로 안내.
+    if (typeof loader._getParser !== 'function') {
+      throw new Error('MMDLoader 내부 API 변경 감지 — three.js 버전 확인 필요');
+    }
     const buffer = await urlOrBlob.arrayBuffer();
     const fmt = ext || (urlOrBlob.name ? urlOrBlob.name.split('.').pop().toLowerCase() : '');
     const parser = loader._getParser();
@@ -42,7 +66,8 @@ export async function loadMMD(ctx, urlOrBlob, { onProgress, ext } = {}) {
     mesh = loader.meshBuilder.setCrossOrigin(loader.crossOrigin).build(data, '', onProgress, () => {});
     ctx.scene.add(mesh);
   } else {
-    // 일반 URL (원격 게시물) — MMDLoader.load() 사용
+    // 일반 URL (원격 게시물) — MMDLoader.load() 사용. 기본 DefaultLoadingManager 유지.
+    const loader = new MMDLoader();
     mesh = await new Promise((resolve, reject) => {
       loader.load(urlOrBlob, resolve,
         (p) => { if (p.total > 0 && onProgress) onProgress(p.loaded / p.total); },

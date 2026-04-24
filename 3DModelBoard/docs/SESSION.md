@@ -30,6 +30,15 @@
 - 크기 한도: 5MB.
 - 구 `posts.json`(background 필드 없음)은 정규화에서 자연스레 `null` → 회귀 없음.
 
+**추가 구현 (2026-04-24 심야)** — **PMX 텍스처 404 해결 · 에러 모달 · 버전 가드**
+- `js/viewer-vrm.js` 로컬 Blob 분기에 전용 `THREE.LoadingManager` 주입. `setURLModifier` 화이트리스트(절대 URL: http/https/data/blob 통과, 상대 경로: 투명 1px PNG data URL로 치환) → 단일 파일 업로드 PMX/PMD 로드 시 텍스처 404 요청이 발생하지 않아 "무한 로딩" 해소. `meshBuilder.manager`/`textureLoader.manager`/`tgaLoader.manager`도 함께 주입(존재 시). 원격 URL 분기는 미변경(리포 posts/ 텍스처 함께 커밋된 게시물 회귀 없음).
+- `js/viewer-vrm.js` 상단에 `typeof loader._getParser !== 'function'` 가드 추가. 향후 three.js 버전 업 시 private API 이름 변경을 무한 로딩 대신 명확한 에러로 안내.
+- 신규 `js/error-log.js` — console.error/warn 후킹 + `window.error`/`unhandledrejection` 수집, 50개 링 버퍼. `withTimeout(promise, ms, label)` 유틸과 `formatForClipboard({summary, detail})` 포함.
+- 신규 `js/error-modal.js` — `showErrorModal({title, summary, detail, hint, onClose})`. [📋 로그 복사] 버튼은 `navigator.clipboard.writeText` 실패 시 `<textarea> + execCommand('copy')` 폴백. 성공/실패 모두 기존 `toastOk`/`toastError`로 피드백. 관리자 문의 안내 문구 고정 포함.
+- `js/view.js`/`js/submit.js` — 모델 로딩 호출을 `withTimeout(..., 45000, '모델')`로 감싸고, 기존 `showOverlay('모델 로딩 실패: ...')`와 미리보기 overlay 텍스트를 `showErrorModal`로 교체. PMX/PMD 실패 시 `hint` 문구가 다음 작업(텍스처 번들 업로드)의 동기를 사용자에게 안내.
+- `js/list.js` — `installErrorLog()` + 목록 로드 실패 catch에 `showErrorModal`.
+- `css/style.css` — `.error-modal-backdrop`(z-index 100) / `.error-modal` / `.error-stack` 규칙 추가. `.toast-host`(z-index 1000)보다 아래라 복사 토스트가 모달 위에 표시.
+
 **로컬 검증** — `python -m http.server 8000` 로 전 페이지 200 OK 확인 (배경 기능 포함).
 
 **배포 검증** — 아직 안 함. Pages 배포 후 실제 URL에서 1~3번 시나리오 + 배경 이미지 업로드/외부 URL 재확인 필요.

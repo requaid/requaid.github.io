@@ -8,6 +8,12 @@ import { mountHeader } from './header.js';
 import { toast, toastOk, toastError } from './ui.js';
 import { setText, getExt, isModelExt, isImageExt, checkMagicBytes, slugify, sanitizeTags, clampText, formatBytes, isValidHttpsImageURL } from './sanitize.js';
 import { submitPostPR } from './github-api.js';
+import { installErrorLog, withTimeout } from './error-log.js';
+import { showErrorModal } from './error-modal.js';
+
+installErrorLog();
+
+const PREVIEW_LOAD_TIMEOUT_MS = 45000;
 
 mountHeader('submit');
 
@@ -135,10 +141,12 @@ async function loadIntoPreview(file) {
   try {
     if (state.ext === 'vrm') {
       const url = URL.createObjectURL(file);
-      try { await loadVRM(viewer, url); } finally { URL.revokeObjectURL(url); }
+      try {
+        await withTimeout(loadVRM(viewer, url), PREVIEW_LOAD_TIMEOUT_MS, '모델');
+      } finally { URL.revokeObjectURL(url); }
     } else {
       // PMX/PMD: Blob 직접 전달 → fetch(blob:) CSP 우회
-      await loadMMD(viewer, file, { ext: state.ext });
+      await withTimeout(loadMMD(viewer, file, { ext: state.ext }), PREVIEW_LOAD_TIMEOUT_MS, '모델');
     }
     state.modelLoaded = true;
     previewOverlay.classList.remove('active');
@@ -148,7 +156,15 @@ async function loadIntoPreview(file) {
     console.error(e);
     state.modelLoaded = false;
     previewOverlay.firstElementChild.textContent = '로딩 실패: ' + (e.message || e);
-    toastError('모델 로딩 실패');
+    const isPmxLike = state.ext === 'pmx' || state.ext === 'pmd';
+    showErrorModal({
+      title: '미리보기 로딩 실패',
+      summary: e.message || String(e),
+      detail: e.stack || '',
+      hint: isPmxLike
+        ? 'PMX/PMD 파일은 같은 폴더의 텍스처(.bmp/.png/.tga 등)를 참조합니다. 현재는 단일 파일 업로드만 지원하므로 텍스처 없이 로드됩니다.'
+        : undefined,
+    });
   }
 }
 

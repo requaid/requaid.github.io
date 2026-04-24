@@ -3,7 +3,10 @@ import { loadAll, deleteLocal } from './post-index.js';
 import { makeEl, setText, formatDate } from './sanitize.js';
 import { mountHeader } from './header.js';
 import { toast, toastOk } from './ui.js';
+import { installErrorLog } from './error-log.js';
+import { showErrorModal } from './error-modal.js';
 
+installErrorLog();
 mountHeader('list');
 
 const grid = document.getElementById('card-grid');
@@ -117,6 +120,15 @@ filterChips.addEventListener('click', (e) => {
 });
 
 (async () => {
-  state.all = await loadAll();
-  render();
+  try {
+    state.all = await loadAll();
+    render();
+  } catch (e) {
+    console.error(e);
+    showErrorModal({
+      title: '게시물 목록 로드 실패',
+      summary: e.message || String(e),
+      detail: e.stack || '',
+    });
+  }
 })();

@@ -8,6 +8,12 @@ import { attachDropzone } from './drag-drop.js';
 import { captureFromRenderer, downloadDataURL } from './thumbnail.js';
 import { setText, formatDate, getExt, isMotionExt, checkMagicBytes, formatBytes } from './sanitize.js';
 import { toast, toastError, toastOk } from './ui.js';
+import { installErrorLog, withTimeout } from './error-log.js';
+import { showErrorModal } from './error-modal.js';
+
+installErrorLog();
+
+const MODEL_LOAD_TIMEOUT_MS = 45000;
 
 const params = new URLSearchParams(location.search);
 const postId = params.get('id');
@@ -64,7 +70,13 @@ if (!postId) {
 } else {
   bootstrap(postId).catch(err => {
     console.error(err);
-    showOverlay('로드 실패: ' + (err.message || err));
+    hideOverlay();
+    showErrorModal({
+      title: '게시물 로드 실패',
+      summary: err.message || String(err),
+      detail: err.stack || '',
+      onClose: () => { location.href = 'index.html'; },
+    });
   });
 }
 
@@ -94,21 +106,37 @@ async function bootstrap(id) {
         modelUrl = post.modelPath;
       }
       try {
-        await loadVRM(ctx, modelUrl, { onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%') });
+        await withTimeout(
+          loadVRM(ctx, modelUrl, { onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%') }),
+          MODEL_LOAD_TIMEOUT_MS, '모델'
+        );
       } finally {
         if (revokeUrl) revokeUrl();
       }
     } else {
       // PMX/PMD: 로컬은 Blob 직접 전달(fetch(blob:) CSP 우회), 원격은 URL 문자열
       const modelTarget = post.source === 'local' ? post.modelBlob : post.modelPath;
-      await loadMMD(ctx, modelTarget, {
-        onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%'),
-        ext: post.format,
-      });
+      await withTimeout(
+        loadMMD(ctx, modelTarget, {
+          onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%'),
+          ext: post.format,
+        }),
+        MODEL_LOAD_TIMEOUT_MS, '모델'
+      );
     }
   } catch (e) {
     console.error(e);
-    showOverlay('모델 로딩 실패: ' + (e.message || e));
+    hideOverlay();
+    const isPmxLike = post.format === 'pmx' || post.format === 'pmd';
+    showErrorModal({
+      title: '모델 로딩 실패',
+      summary: e.message || String(e),
+      detail: e.stack || '',
+      hint: isPmxLike
+        ? 'PMX/PMD 파일은 같은 폴더의 텍스처(.bmp/.png/.tga 등)를 참조합니다. 현재 단일 파일 업로드만 지원하므로 텍스처 없이 로드됩니다. 타임아웃이 발생한 경우 텍스처가 아닌 다른 원인일 수 있습니다.'
+        : undefined,
+      onClose: () => { location.href = 'index.html'; },
+    });
     return;
   }
   hideOverlay();
