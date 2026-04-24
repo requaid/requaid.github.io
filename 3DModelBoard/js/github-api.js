@@ -139,7 +139,7 @@ export function textToBase64(text) {
   return btoa(binary);
 }
 
-export async function submitPostPR({ postId, title, description, author, tags, format, modelBlob, modelExt, thumbnailDataURL, bgBlob, bgExt, bgURL, onLog }) {
+export async function submitPostPR({ postId, title, description, author, tags, format, modelBlob, modelExt, thumb, bgBlob, bgExt, bgURL, onLog }) {
   const log = (msg, type) => { if (onLog) onLog(msg, type || 'info'); };
 
   const cfg = await getConfig();
@@ -167,6 +167,10 @@ export async function submitPostPR({ postId, title, description, author, tags, f
   const metaPath = postDir + 'meta.json';
   const bgPath = (bgBlob && bgExt) ? (postDir + 'background.' + bgExt) : null;
 
+  const thumbSpec = thumb || {};
+  const thumbAspect = thumbSpec.aspect === 'portrait' ? 'portrait' : 'square';
+  const thumbMode = thumbSpec.mode || 'unknown';
+
   const meta = {
     id: postId,
     title,
@@ -175,7 +179,7 @@ export async function submitPostPR({ postId, title, description, author, tags, f
     tags,
     format,
     modelPath,
-    thumbnail: thumbPath,
+    thumbnail: null,
     background: null,
     createdAt: new Date().toISOString(),
   };
@@ -188,16 +192,18 @@ export async function submitPostPR({ postId, title, description, author, tags, f
     branch: branchName,
   });
 
-  if (thumbnailDataURL) {
+  if (thumbMode === 'url' && thumbSpec.url) {
+    meta.thumbnail = { type: 'url', url: thumbSpec.url, aspect: thumbAspect, mode: 'url' };
+  } else if (thumbSpec.dataURL) {
     log('썸네일 업로드...');
-    const base64 = thumbnailDataURL.split(',')[1] || '';
+    const base64 = thumbSpec.dataURL.split(',')[1] || '';
     await putFile(login, cfg.repo, {
       path: thumbPath,
       contentBase64: base64,
       message: `post: add thumbnail for ${postId}`,
       branch: branchName,
     });
-    meta.thumbnail = thumbPath;
+    meta.thumbnail = { type: 'path', path: thumbPath, aspect: thumbAspect, mode: thumbMode };
   } else {
     meta.thumbnail = null;
   }

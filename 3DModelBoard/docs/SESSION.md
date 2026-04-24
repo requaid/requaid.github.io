@@ -11,6 +11,16 @@
 - 데이터: `posts/posts.json = []`, `assets/placeholder.svg`
 - 문서: `README.md`, `docs/USER.md`·`AUTHOR.md` (간결 기술), `docs/BEGINNER-USER.md`·`BEGINNER-AUTHOR.md` (2026-04-24 추가, 비개발자·깃허브 초보용 상세)
 
+**추가 구현 (2026-04-24 후반)** — **썸네일 모드 확장**
+- 자동 생성 2가지: `auto-full`(전신 3:4 portrait) / `auto-head`(두상 1:1, 헤드 본 기준 프레이밍).
+- 사용자 직접 등록 2가지: `upload`(이미지 파일) / `url`(외부 HTTPS URL).
+- `upload`/`url` 모드는 "두상(1:1)" 토글로 리스트 표시 비율 선택.
+- 헤드 본 없는 모델은 자동 전신 폴백.
+- `meta.json` / `posts.json` 스키마 업그레이드: `thumbnail`이 객체 `{type, path|url, aspect, mode}`. 기존 문자열은 `normalizeThumbnail`에서 `{type:'path', aspect:'square', mode:'legacy'}`로 역호환.
+- 리스트 CSS: `.card-thumb.aspect-portrait { aspect-ratio: 3/4 }` 추가. 두상 썸네일은 1:1, 전신은 세로로.
+- `js/viewer-core.js`에 `ctx.frameHead()` / `ctx.frameFullBody()` 추가 (헤드 본 월드위치 + 바운딩 박스 기반 거리 계산, 렌더러 1-프레임 동기 캡처 보장).
+- `sanitize.js`의 `isValidHttpsBgURL`을 `isValidHttpsImageURL`로 일반화 + 별칭 하위호환.
+
 **추가 구현 (2026-04-24)** — **게시물 배경 기능**
 - `submit.html` 4번 섹션에 라디오(없음/이미지 업로드/외부 URL) + 미리보기.
 - 이미지는 `posts/<id>/background.<ext>` 로 PR 업로드 / IDB에 Blob 보관. 외부 URL은 `meta.background.url` 로 저장.
@@ -35,7 +45,7 @@
 - **파일 검증** — 확장자 + 매직바이트(VRM=`glTF`, PMX=`PMX `, VMD=`Vocaloid Motion Data`, PNG/JPEG/WebP 헤더).
 - **크기 상한** — 모델 PR 25MB / 로컬 100MB, 모션 10MB, 썸네일 2MB, 배경 5MB.
 - **Frame-busting** — `js/config.js` 최상단 `window.top !== window.self` 체크(meta CSP의 frame-ancestors는 무효).
-- **썸네일** — 자동 스냅샷 기본 + 사용자 이미지 업로드 시 `createImageBitmap` 리사이즈·정사각 크롭.
+- **썸네일** — 자동(전신 3:4 / 두상 1:1) · 업로드(두상 토글) · 외부 HTTPS URL. 헤드 본 기반 카메라 프레이밍 → 리스트는 `.card-thumb.aspect-square|aspect-portrait`로 비율 다르게.
 - **배경 렌더링** — Three.js `scene.background` 대신 canvas 뒤 DOM 레이어(`.viewer-bg`). renderer `alpha:true` 기존 설정 활용. 배경 있을 시 `scene.background = null`. 이미지는 리포 또는 외부 HTTPS URL 둘 다 지원.
 - **내장 모션** — idle/walk/run/dance 프로시저럴 클립. VRM humanoid 본 이름 + PMX 일본어 본 매핑(`bone-map.js`).
 

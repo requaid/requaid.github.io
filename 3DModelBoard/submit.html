@@ -52,17 +52,34 @@
         </div>
 
         <h2 style="margin-top:16px;">3. 썸네일</h2>
+        <div class="thumb-mode">
+          <label><input type="radio" name="thumb-mode" value="auto-full" checked> 자동 — 전신샷</label>
+          <label><input type="radio" name="thumb-mode" value="auto-head"> 자동 — 두상</label>
+          <label><input type="radio" name="thumb-mode" value="upload"> 이미지 업로드</label>
+          <label><input type="radio" name="thumb-mode" value="url"> 외부 URL</label>
+        </div>
         <div class="thumb-preview-row">
-          <div class="thumb-preview" id="thumb-preview"></div>
+          <div class="thumb-preview aspect-portrait" id="thumb-preview"></div>
           <div class="thumb-actions">
-            <button id="btn-recapture" class="btn-secondary">📷 다시 찍기</button>
-            <label class="btn-secondary" style="text-align:center; cursor:pointer;">
-              🖼 이미지 업로드
-              <input type="file" id="thumb-input" accept=".png,.jpg,.jpeg,.webp" style="display:none;">
-            </label>
+            <div id="thumb-field-auto" class="thumb-field">
+              <button id="btn-recapture" class="btn-secondary">📷 다시 찍기</button>
+              <div class="form-help" style="margin-top:4px;">자동 캡처. "두상" 모드는 머리 본을 기준으로 카메라가 자동 이동합니다.</div>
+            </div>
+            <div id="thumb-field-upload" class="thumb-field hidden">
+              <label class="btn-secondary" style="display:inline-block; cursor:pointer;">
+                🖼 이미지 선택
+                <input type="file" id="thumb-input" accept=".png,.jpg,.jpeg,.webp" style="display:none;">
+              </label>
+              <label class="thumb-aspect-toggle"><input type="checkbox" id="thumb-aspect-upload"> 두상(1:1)</label>
+              <div class="form-help" style="margin-top:4px;">최대 2MB · PNG / JPG / WebP. 선택한 비율로 중앙 크롭됩니다.</div>
+            </div>
+            <div id="thumb-field-url" class="thumb-field hidden">
+              <input type="text" id="thumb-url-input" class="thumb-url-input" placeholder="https://example.com/thumb.png" maxlength="2000">
+              <label class="thumb-aspect-toggle"><input type="checkbox" id="thumb-aspect-url"> 두상(1:1)</label>
+              <div class="thumb-warn">⚠ 외부 URL은 리스트 표시 시 해당 서버로 HTTP 요청을 보냅니다. 신뢰할 수 있는 HTTPS 호스트만 사용하세요.</div>
+            </div>
           </div>
         </div>
-        <div class="form-help" style="margin-top:6px;">자동 스냅샷이 기본입니다. 원하시면 이미지를 직접 업로드해 대체하세요.</div>
 
         <h2 style="margin-top:16px;">4. 배경 (선택)</h2>
         <div class="bg-mode">

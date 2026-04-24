@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { localPosts } from './idb.js';
-import { isSafeImagePath, isSafeModelPath, clampText, sanitizeTags, normalizeBackground } from './sanitize.js';
+import { isSafeImagePath, isSafeModelPath, clampText, sanitizeTags, normalizeBackground, normalizeThumbnail } from './sanitize.js';
 
 function normalizeRemote(raw) {
   if (!raw || typeof raw !== 'object') return null;
@@ -10,7 +10,6 @@ function normalizeRemote(raw) {
   if (!format) return null;
   const modelPath = String(raw.modelPath || '');
   if (!isSafeModelPath(modelPath)) return null;
-  const thumb = raw.thumbnail ? (isSafeImagePath(raw.thumbnail) ? raw.thumbnail : null) : null;
   return {
     id,
     source: 'remote',
@@ -20,7 +19,7 @@ function normalizeRemote(raw) {
     tags: sanitizeTags(raw.tags),
     format,
     modelPath,
-    thumbnail: thumb,
+    thumbnail: normalizeThumbnail(raw.thumbnail),
     background: normalizeBackground(raw.background),
     createdAt: String(raw.createdAt || ''),
   };
@@ -29,6 +28,7 @@ function normalizeRemote(raw) {
 function normalizeLocal(raw) {
   const bgBlob = raw.backgroundBlob instanceof Blob ? raw.backgroundBlob : null;
   const bgURL = typeof raw.backgroundURL === 'string' ? raw.backgroundURL : null;
+  const thumbMeta = resolveLocalThumbnail(raw);
   return {
     id: raw.id,
     source: 'local',
@@ -40,11 +40,25 @@ function normalizeLocal(raw) {
     modelBlob: raw.modelBlob,
     modelName: raw.modelName,
     thumbnailDataURL: raw.thumbnailDataURL || null,
+    thumbnail: thumbMeta,
     backgroundBlob: bgBlob,
     backgroundExt: raw.backgroundExt || null,
     backgroundURL: bgURL,
     createdAt: raw.createdAt,
   };
+}
+
+function resolveLocalThumbnail(raw) {
+  const aspect = raw.thumbnailAspect === 'portrait' ? 'portrait' : 'square';
+  const modeSet = new Set(['auto-full', 'auto-head', 'upload', 'url', 'legacy', 'unknown']);
+  const mode = modeSet.has(raw.thumbnailMode) ? raw.thumbnailMode : 'unknown';
+  if (raw.thumbnailDataURL) {
+    return { type: 'dataurl', dataURL: raw.thumbnailDataURL, aspect, mode };
+  }
+  if (raw.thumbnailURL && typeof raw.thumbnailURL === 'string') {
+    return { type: 'url', url: raw.thumbnailURL, aspect, mode };
+  }
+  return null;
 }
 
 export async function loadRemoteIndex() {

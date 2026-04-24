@@ -21,6 +21,8 @@ export const CONFIG = Object.freeze({
   IMAGE_EXT:  ['png', 'jpg', 'jpeg', 'webp'],
 
   THUMB_MAX_DIM: 512,
+  THUMB_PORTRAIT_W: 512,
+  THUMB_PORTRAIT_H: 682,
 
   POSTS_INDEX: 'posts/posts.json',
   POSTS_DIR: 'posts/',

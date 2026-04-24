@@ -14,8 +14,20 @@ const filterChips = document.getElementById('filter-chips');
 let state = { all: [], filterFormat: 'all', search: '' };
 
 function thumbUrl(post) {
-  if (post.source === 'local') return post.thumbnailDataURL || 'assets/placeholder.svg';
-  return post.thumbnail || 'assets/placeholder.svg';
+  const t = post.thumbnail;
+  if (t) {
+    if (t.type === 'dataurl' && t.dataURL) return t.dataURL;
+    if (t.type === 'url' && t.url) return t.url;
+    if (t.type === 'path' && t.path) return t.path;
+  }
+  if (post.source === 'local' && post.thumbnailDataURL) return post.thumbnailDataURL;
+  return 'assets/placeholder.svg';
+}
+
+function thumbAspect(post) {
+  const t = post.thumbnail;
+  if (t && t.aspect === 'portrait') return 'portrait';
+  return 'square';
 }
 
 function matches(post) {
@@ -44,7 +56,8 @@ function render() {
     if (post.source === 'local') badges.appendChild(makeEl('span', { className: 'badge badge-local', text: '로컬' }));
     for (const tag of (post.tags || []).slice(0, 2)) badges.appendChild(makeEl('span', { className: 'badge', text: '#' + tag }));
 
-    const thumb = makeEl('a', { className: 'card-thumb card-link' });
+    const aspectCls = thumbAspect(post) === 'portrait' ? ' aspect-portrait' : ' aspect-square';
+    const thumb = makeEl('a', { className: 'card-thumb card-link' + aspectCls });
     thumb.href = 'view.html?id=' + encodeURIComponent(post.id) + (post.source === 'local' ? '&source=local' : '');
     thumb.setAttribute('aria-label', post.title || post.id);
     thumb.style.backgroundImage = 'url(' + JSON.stringify(thumbUrl(post)) + ')';

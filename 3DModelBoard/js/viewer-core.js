@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { getBoneNode } from './viewer-vrm.js';
 
 export function createViewer({ canvas, container }) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -67,6 +68,39 @@ export function createViewer({ canvas, container }) {
     controls.update();
   }
   ctx.centerModel = centerModel;
+
+  function frameFullBody() {
+    if (!ctx.currentModel) return false;
+    const box = new THREE.Box3().setFromObject(ctx.currentModel);
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const targetY = size.y * 0.55;
+    camera.position.set(0, targetY, maxDim * 2.2);
+    controls.target.set(0, targetY, 0);
+    controls.update();
+    renderer.render(scene, camera);
+    return true;
+  }
+  ctx.frameFullBody = frameFullBody;
+
+  function frameHead() {
+    if (!ctx.currentModel) return false;
+    const head = getBoneNode(ctx, 'head');
+    if (!head) return false;
+    const pos = new THREE.Vector3();
+    head.getWorldPosition(pos);
+    const box = new THREE.Box3().setFromObject(ctx.currentModel);
+    const modelHeight = Math.max(0.01, box.max.y - box.min.y);
+    const headHalf = Math.max(modelHeight * 0.065, 0.08);
+    const fovRad = camera.fov * Math.PI / 180;
+    const dist = (headHalf / Math.tan(fovRad / 2)) * 1.35;
+    camera.position.set(pos.x, pos.y, pos.z + dist);
+    controls.target.copy(pos);
+    controls.update();
+    renderer.render(scene, camera);
+    return true;
+  }
+  ctx.frameHead = frameHead;
 
   function animate() {
     requestAnimationFrame(animate);

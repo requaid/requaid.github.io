@@ -9,39 +9,71 @@ export function captureFromRenderer(renderer) {
   }
 }
 
-export async function normalizeImageFile(file, maxDim = CONFIG.THUMB_MAX_DIM) {
-  const bitmap = await createImageBitmap(file);
-  const size = Math.min(bitmap.width, bitmap.height);
-  const sx = (bitmap.width - size) / 2;
-  const sy = (bitmap.height - size) / 2;
-  const out = Math.min(size, maxDim);
-  const canvas = document.createElement('canvas');
-  canvas.width = out;
-  canvas.height = out;
-  const g = canvas.getContext('2d');
-  g.drawImage(bitmap, sx, sy, size, size, 0, 0, out, out);
-  bitmap.close?.();
-  return canvas.toDataURL('image/png');
+function targetSize(aspect) {
+  if (aspect === 'portrait') return { w: CONFIG.THUMB_PORTRAIT_W, h: CONFIG.THUMB_PORTRAIT_H };
+  return { w: CONFIG.THUMB_MAX_DIM, h: CONFIG.THUMB_MAX_DIM };
 }
 
-export function resizeDataURL(dataURL, maxDim = CONFIG.THUMB_MAX_DIM) {
+function cropToAspect(imgW, imgH, outW, outH) {
+  const targetRatio = outW / outH;
+  const srcRatio = imgW / imgH;
+  let sW, sH;
+  if (srcRatio > targetRatio) {
+    sH = imgH;
+    sW = imgH * targetRatio;
+  } else {
+    sW = imgW;
+    sH = imgW / targetRatio;
+  }
+  const sX = (imgW - sW) / 2;
+  const sY = (imgH - sH) / 2;
+  return { sX, sY, sW, sH };
+}
+
+export async function captureWithAspect(renderer, aspect = 'square', ctx = null) {
+  if (ctx && ctx.scene && ctx.camera) {
+    try { renderer.render(ctx.scene, ctx.camera); } catch (_) {}
+  }
+  const src = captureFromRenderer(renderer);
+  if (!src) return null;
+  return cropAndResizeDataURL(src, aspect);
+}
+
+export function cropAndResizeDataURL(dataURL, aspect = 'square') {
+  const { w, h } = targetSize(aspect);
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const size = Math.min(img.naturalWidth, img.naturalHeight, maxDim * 2);
-      const out = Math.min(size, maxDim);
-      const sx = (img.naturalWidth - size) / 2;
-      const sy = (img.naturalHeight - size) / 2;
+      const { sX, sY, sW, sH } = cropToAspect(img.naturalWidth, img.naturalHeight, w, h);
       const canvas = document.createElement('canvas');
-      canvas.width = out;
-      canvas.height = out;
+      canvas.width = w;
+      canvas.height = h;
       const g = canvas.getContext('2d');
-      g.drawImage(img, sx, sy, size, size, 0, 0, out, out);
+      g.imageSmoothingQuality = 'high';
+      g.drawImage(img, sX, sY, sW, sH, 0, 0, w, h);
       resolve(canvas.toDataURL('image/png'));
     };
     img.onerror = reject;
     img.src = dataURL;
   });
+}
+
+export async function normalizeImageFile(file, aspect = 'square') {
+  const bitmap = await createImageBitmap(file);
+  const { w, h } = targetSize(aspect);
+  const { sX, sY, sW, sH } = cropToAspect(bitmap.width, bitmap.height, w, h);
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const g = canvas.getContext('2d');
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(bitmap, sX, sY, sW, sH, 0, 0, w, h);
+  bitmap.close?.();
+  return canvas.toDataURL('image/png');
+}
+
+export function resizeDataURL(dataURL, aspect = 'square') {
+  return cropAndResizeDataURL(dataURL, aspect);
 }
 
 export function dataURLToBlob(dataURL) {

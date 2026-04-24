@@ -35,7 +35,7 @@ export function isSafeBgPath(path) {
   return typeof path === 'string' && CONFIG.BG_PATH_WHITELIST.test(path);
 }
 
-export function isValidHttpsBgURL(s) {
+export function isValidHttpsImageURL(s) {
   if (typeof s !== 'string' || s.length > 2000) return false;
   let u;
   try { u = new URL(s); } catch { return false; }
@@ -46,13 +46,34 @@ export function isValidHttpsBgURL(s) {
   return true;
 }
 
+export const isValidHttpsBgURL = isValidHttpsImageURL;
+
 export function normalizeBackground(raw) {
   if (!raw || typeof raw !== 'object') return null;
   if (raw.type === 'image' && isSafeBgPath(raw.path)) {
     return { type: 'image', path: raw.path };
   }
-  if (raw.type === 'url' && isValidHttpsBgURL(raw.url)) {
+  if (raw.type === 'url' && isValidHttpsImageURL(raw.url)) {
     return { type: 'url', url: raw.url };
+  }
+  return null;
+}
+
+export function normalizeThumbnail(raw) {
+  if (raw == null) return null;
+  if (typeof raw === 'string') {
+    if (!isSafeImagePath(raw)) return null;
+    return { type: 'path', path: raw, aspect: 'square', mode: 'legacy' };
+  }
+  if (typeof raw !== 'object') return null;
+  const aspect = raw.aspect === 'portrait' ? 'portrait' : 'square';
+  const modeSet = new Set(['auto-full', 'auto-head', 'upload', 'url', 'legacy', 'unknown']);
+  const mode = modeSet.has(raw.mode) ? raw.mode : 'unknown';
+  if (raw.type === 'path' && isSafeImagePath(raw.path)) {
+    return { type: 'path', path: raw.path, aspect, mode };
+  }
+  if (raw.type === 'url' && isValidHttpsImageURL(raw.url)) {
+    return { type: 'url', url: raw.url, aspect, mode };
   }
   return null;
 }

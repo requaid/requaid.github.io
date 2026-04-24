@@ -3,10 +3,10 @@ import { settings } from './idb.js';
 import { saveLocal } from './post-index.js';
 import { createViewer } from './viewer-core.js';
 import { loadVRM, loadMMD } from './viewer-vrm.js';
-import { captureFromRenderer, normalizeImageFile, resizeDataURL, dataURLToBase64 } from './thumbnail.js';
+import { captureFromRenderer, normalizeImageFile, cropAndResizeDataURL, captureWithAspect } from './thumbnail.js';
 import { mountHeader } from './header.js';
 import { toast, toastOk, toastError } from './ui.js';
-import { setText, getExt, isModelExt, isImageExt, checkMagicBytes, slugify, sanitizeTags, clampText, formatBytes, isValidHttpsBgURL } from './sanitize.js';
+import { setText, getExt, isModelExt, isImageExt, checkMagicBytes, slugify, sanitizeTags, clampText, formatBytes, isValidHttpsImageURL } from './sanitize.js';
 import { submitPostPR } from './github-api.js';
 
 mountHeader('submit');
@@ -21,6 +21,13 @@ const descInput = document.getElementById('f-desc');
 const thumbPreview = document.getElementById('thumb-preview');
 const thumbInput = document.getElementById('thumb-input');
 const btnRecapture = document.getElementById('btn-recapture');
+const thumbModeRadios = document.querySelectorAll('input[name="thumb-mode"]');
+const thumbFieldAuto = document.getElementById('thumb-field-auto');
+const thumbFieldUpload = document.getElementById('thumb-field-upload');
+const thumbFieldUrl = document.getElementById('thumb-field-url');
+const thumbUrlInput = document.getElementById('thumb-url-input');
+const thumbAspectUpload = document.getElementById('thumb-aspect-upload');
+const thumbAspectUrl = document.getElementById('thumb-aspect-url');
 const btnSaveLocal = document.getElementById('btn-save-local');
 const btnSubmitPR = document.getElementById('btn-submit-pr');
 const logBox = document.getElementById('log');
@@ -46,7 +53,12 @@ let state = {
   ext: null,
   format: null,
   viewer: null,
-  thumbDataURL: null,
+  thumb: {
+    mode: 'auto-full',   // 'auto-full' | 'auto-head' | 'upload' | 'url'
+    aspect: 'portrait',  // 'square' | 'portrait'
+    dataURL: null,
+    url: '',
+  },
   modelLoaded: false,
   bg: { mode: 'none', blob: null, ext: null, url: '', dataURL: null },
 };
@@ -103,8 +115,8 @@ async function handleModelFile(file) {
   state.format = ext;
   setText(modelInfo, file.name + ' · ' + formatBytes(file.size));
 
-  const sizeWarn = document.createElement('span');
   if (file.size > CONFIG.MAX_REPO_SIZE) {
+    const sizeWarn = document.createElement('span');
     sizeWarn.textContent = ' · ⚠ 25MB 초과 → PR 불가, 로컬 저장만 가능';
     sizeWarn.style.color = 'var(--warn)';
     modelInfo.appendChild(sizeWarn);
@@ -138,7 +150,7 @@ async function loadIntoPreview(file) {
     state.modelLoaded = true;
     previewOverlay.classList.remove('active');
     applyBgToPreview();
-    setTimeout(() => captureAutoThumb(), 300);
+    setTimeout(() => captureAuto(), 350);
   } catch (e) {
     console.error(e);
     state.modelLoaded = false;
@@ -149,22 +161,79 @@ async function loadIntoPreview(file) {
   }
 }
 
-function captureAutoThumb() {
-  if (!state.viewer) return;
-  const dataURL = captureFromRenderer(state.viewer.renderer);
-  if (!dataURL) return;
-  resizeDataURL(dataURL, CONFIG.THUMB_MAX_DIM).then(resized => {
-    state.thumbDataURL = resized;
-    thumbPreview.style.backgroundImage = 'url(' + JSON.stringify(resized) + ')';
-  }).catch(() => {
-    state.thumbDataURL = dataURL;
-    thumbPreview.style.backgroundImage = 'url(' + JSON.stringify(dataURL) + ')';
-  });
+function setThumbPreview(src, aspect) {
+  thumbPreview.classList.toggle('aspect-portrait', aspect === 'portrait');
+  thumbPreview.classList.toggle('aspect-square', aspect !== 'portrait');
+  thumbPreview.style.backgroundImage = src ? 'url(' + JSON.stringify(src) + ')' : '';
 }
 
-btnRecapture.addEventListener('click', () => {
+async function captureAuto() {
+  if (!state.viewer || !state.modelLoaded) return;
+  const mode = state.thumb.mode;
+  let aspect = 'portrait';
+  if (mode === 'auto-head') {
+    const ok = state.viewer.frameHead();
+    if (!ok) {
+      toast('헤드 본을 찾지 못해 전신 프레이밍으로 대체합니다.');
+      state.viewer.frameFullBody();
+      aspect = 'portrait';
+      setActiveMode('auto-full');
+    } else {
+      aspect = 'square';
+    }
+  } else {
+    state.viewer.frameFullBody();
+    aspect = 'portrait';
+  }
+  try {
+    const data = await captureWithAspect(state.viewer.renderer, aspect, state.viewer);
+    if (!data) return;
+    state.thumb.dataURL = data;
+    state.thumb.aspect = aspect;
+    state.thumb.url = '';
+    setThumbPreview(data, aspect);
+  } catch (e) {
+    console.warn(e);
+  }
+}
+
+function setActiveMode(mode) {
+  state.thumb.mode = mode;
+  for (const r of thumbModeRadios) r.checked = (r.value === mode);
+  thumbFieldAuto.classList.toggle('hidden', !(mode === 'auto-full' || mode === 'auto-head'));
+  thumbFieldUpload.classList.toggle('hidden', mode !== 'upload');
+  thumbFieldUrl.classList.toggle('hidden', mode !== 'url');
+}
+
+thumbModeRadios.forEach(r => r.addEventListener('change', async () => {
+  if (!r.checked) return;
+  const mode = r.value;
+  setActiveMode(mode);
+
+  if (mode === 'auto-full' || mode === 'auto-head') {
+    if (state.modelLoaded) await captureAuto();
+    else { state.thumb.dataURL = null; setThumbPreview(null, 'portrait'); }
+    return;
+  }
+  if (mode === 'upload') {
+    const aspect = thumbAspectUpload.checked ? 'square' : 'portrait';
+    state.thumb.aspect = aspect;
+    state.thumb.url = '';
+    if (state.thumb.dataURL) setThumbPreview(state.thumb.dataURL, aspect);
+    return;
+  }
+  if (mode === 'url') {
+    const aspect = thumbAspectUrl.checked ? 'square' : 'portrait';
+    state.thumb.aspect = aspect;
+    state.thumb.dataURL = null;
+    applyUrlPreview();
+    return;
+  }
+}));
+
+btnRecapture.addEventListener('click', async () => {
   if (!state.modelLoaded) { toast('먼저 모델을 로드하세요.'); return; }
-  captureAutoThumb();
+  await captureAuto();
   toastOk('썸네일 갱신');
 });
 
@@ -172,14 +241,18 @@ thumbInput.addEventListener('change', async () => {
   const file = thumbInput.files?.[0];
   if (!file) return;
   const ext = getExt(file.name);
-  if (!isImageExt(ext)) { toastError('이미지 형식만 가능합니다.'); return; }
-  if (file.size > CONFIG.MAX_THUMB_SIZE) { toastError('이미지가 너무 큽니다.'); return; }
+  if (!isImageExt(ext)) { toastError('이미지 형식만 가능합니다.'); thumbInput.value = ''; return; }
+  if (file.size > CONFIG.MAX_THUMB_SIZE) { toastError('이미지가 너무 큽니다.'); thumbInput.value = ''; return; }
   const magicOk = await checkMagicBytes(file, ext);
-  if (!magicOk) { toastError('이미지 헤더 검증 실패.'); return; }
+  if (!magicOk) { toastError('이미지 헤더 검증 실패.'); thumbInput.value = ''; return; }
+  const aspect = thumbAspectUpload.checked ? 'square' : 'portrait';
   try {
-    const dataURL = await normalizeImageFile(file);
-    state.thumbDataURL = dataURL;
-    thumbPreview.style.backgroundImage = 'url(' + JSON.stringify(dataURL) + ')';
+    const dataURL = await normalizeImageFile(file, aspect);
+    state.thumb.mode = 'upload';
+    state.thumb.dataURL = dataURL;
+    state.thumb.aspect = aspect;
+    state.thumb.url = '';
+    setThumbPreview(dataURL, aspect);
     toastOk('썸네일 교체됨');
   } catch (e) {
     console.error(e);
@@ -187,10 +260,52 @@ thumbInput.addEventListener('change', async () => {
   }
 });
 
+thumbAspectUpload.addEventListener('change', async () => {
+  if (state.thumb.mode !== 'upload' || !thumbInput.files?.[0]) {
+    state.thumb.aspect = thumbAspectUpload.checked ? 'square' : 'portrait';
+    if (state.thumb.dataURL) {
+      const newData = await cropAndResizeDataURL(state.thumb.dataURL, state.thumb.aspect);
+      state.thumb.dataURL = newData;
+      setThumbPreview(newData, state.thumb.aspect);
+    } else {
+      setThumbPreview(null, state.thumb.aspect);
+    }
+    return;
+  }
+  const file = thumbInput.files[0];
+  const aspect = thumbAspectUpload.checked ? 'square' : 'portrait';
+  try {
+    const dataURL = await normalizeImageFile(file, aspect);
+    state.thumb.dataURL = dataURL;
+    state.thumb.aspect = aspect;
+    setThumbPreview(dataURL, aspect);
+  } catch (e) { console.error(e); }
+});
+
+thumbUrlInput.addEventListener('input', () => {
+  const v = thumbUrlInput.value.trim();
+  state.thumb.url = v;
+  applyUrlPreview();
+});
+
+thumbAspectUrl.addEventListener('change', () => {
+  state.thumb.aspect = thumbAspectUrl.checked ? 'square' : 'portrait';
+  applyUrlPreview();
+});
+
+function applyUrlPreview() {
+  const v = state.thumb.url;
+  if (v && isValidHttpsImageURL(v)) {
+    setThumbPreview(v, state.thumb.aspect);
+  } else {
+    setThumbPreview(null, state.thumb.aspect);
+  }
+}
+
 function applyBgToPreview() {
   let url = null;
   if (state.bg.mode === 'image' && state.bg.dataURL) url = state.bg.dataURL;
-  else if (state.bg.mode === 'url' && isValidHttpsBgURL(state.bg.url)) url = state.bg.url;
+  else if (state.bg.mode === 'url' && isValidHttpsImageURL(state.bg.url)) url = state.bg.url;
 
   if (url) {
     const css = 'url(' + JSON.stringify(url) + ')';
@@ -246,7 +361,7 @@ bgUrlInput.addEventListener('input', () => {
   const v = bgUrlInput.value.trim();
   state.bg.url = v;
   if (!v) { applyBgToPreview(); return; }
-  if (!isValidHttpsBgURL(v)) {
+  if (!isValidHttpsImageURL(v)) {
     previewBg.style.backgroundImage = '';
     bgPreview.style.backgroundImage = '';
     bgPreview.classList.add('hidden');
@@ -262,14 +377,24 @@ function gatherPostData() {
   const description = clampText(descInput.value, 2000);
   const id = slugify(title) + '-' + Date.now().toString(36);
   const bg = resolveBg();
-  return { id, title, author, tags, description, format: state.format, modelBlob: state.file, modelExt: state.ext, bg };
+  const thumb = resolveThumb();
+  return { id, title, author, tags, description, format: state.format, modelBlob: state.file, modelExt: state.ext, bg, thumb };
+}
+
+function resolveThumb() {
+  const { mode, aspect, dataURL, url } = state.thumb;
+  if (mode === 'url') {
+    if (isValidHttpsImageURL(url)) return { mode, aspect, url };
+    return { mode: 'unknown', aspect, dataURL: null };
+  }
+  return { mode, aspect, dataURL };
 }
 
 function resolveBg() {
   if (state.bg.mode === 'image' && state.bg.blob && state.bg.ext) {
     return { mode: 'image', blob: state.bg.blob, ext: state.bg.ext, dataURL: state.bg.dataURL };
   }
-  if (state.bg.mode === 'url' && isValidHttpsBgURL(state.bg.url)) {
+  if (state.bg.mode === 'url' && isValidHttpsImageURL(state.bg.url)) {
     return { mode: 'url', url: state.bg.url };
   }
   return { mode: 'none' };
@@ -288,7 +413,10 @@ btnSaveLocal.addEventListener('click', async () => {
       format: data.format,
       modelBlob: state.file,
       modelName: state.file.name,
-      thumbnailDataURL: state.thumbDataURL,
+      thumbnailDataURL: data.thumb.dataURL || null,
+      thumbnailURL: data.thumb.mode === 'url' ? data.thumb.url : null,
+      thumbnailAspect: data.thumb.aspect,
+      thumbnailMode: data.thumb.mode,
       backgroundBlob: data.bg.mode === 'image' ? data.bg.blob : null,
       backgroundExt:  data.bg.mode === 'image' ? data.bg.ext  : null,
       backgroundURL:  data.bg.mode === 'url'   ? data.bg.url  : null,
@@ -329,7 +457,7 @@ btnSubmitPR.addEventListener('click', async () => {
       format: data.format,
       modelBlob: data.modelBlob,
       modelExt: data.modelExt,
-      thumbnailDataURL: state.thumbDataURL,
+      thumb: data.thumb,
       bgBlob: data.bg.mode === 'image' ? data.bg.blob : null,
       bgExt:  data.bg.mode === 'image' ? data.bg.ext  : null,
       bgURL:  data.bg.mode === 'url'   ? data.bg.url  : null,
