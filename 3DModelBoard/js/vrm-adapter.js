@@ -80,14 +80,21 @@ function pickRoot(result) {
 function resolveHumanoid(scene, result, info) {
   if (!info) return null;
   const cache = new Map();
+  // Babylon's GLTF loader creates *both* a TransformNode and a Bone with the
+  // same name for every glTF skeletal node. The TransformNode often ends up
+  // as a parent of the actual deforming bone, so its world position can land
+  // on the chest/neck even when we asked for "head". Prefer the Bone's linked
+  // transform node first — that's the one whose absolute position tracks the
+  // VRM humanoid joint we care about.
   const findNode = (name) => {
-    const tn = scene.getTransformNodeByName?.(name);
-    if (tn) return tn;
     for (const skel of result.skeletons || []) {
       const bone = skel.bones.find(b => b.name === name);
-      if (bone) return bone.getTransformNode?.() || bone;
+      if (bone) {
+        const tn = bone.getTransformNode?.();
+        if (tn) return tn;
+      }
     }
-    return null;
+    return scene.getTransformNodeByName?.(name) ?? null;
   };
   return {
     version: info.version,

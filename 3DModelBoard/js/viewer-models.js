@@ -7,14 +7,25 @@ import {
 import { loadVRMFromBlob } from './vrm-adapter.js';
 import { buildMMDHumanoidFromBones } from './bone-map.js';
 
-let _mmdRegistered = false;
+// Plugin registration is idempotent across the whole page (registry is keyed
+// by extension), but SDEF injection must run once *per engine instance*.
+// Submit/preview disposes and recreates the engine every time the user picks
+// a different model, so a single boolean gate would leave the second engine
+// without SDEF — manifesting as silent shader-compile hangs on PMX/PMD.
+let _pluginsRegistered = false;
+const _sdefInjectedEngines = new WeakSet();
+
 function ensureMMDRegistered(engine) {
-  if (_mmdRegistered) return;
-  registerSceneLoaderPlugin(new PmxLoader());
-  registerSceneLoaderPlugin(new PmdLoader());
-  RegisterDxBmpTextureLoader();
-  SdefInjector.OverrideEngineCreateEffect(engine);
-  _mmdRegistered = true;
+  if (!_pluginsRegistered) {
+    registerSceneLoaderPlugin(new PmxLoader());
+    registerSceneLoaderPlugin(new PmdLoader());
+    RegisterDxBmpTextureLoader();
+    _pluginsRegistered = true;
+  }
+  if (engine && !_sdefInjectedEngines.has(engine)) {
+    SdefInjector.OverrideEngineCreateEffect(engine);
+    _sdefInjectedEngines.add(engine);
+  }
 }
 
 export async function loadVRM(ctx, blob, onProgress) {
@@ -36,13 +47,25 @@ export async function loadMMD(ctx, blob, { ext = 'pmx', onProgress, referenceFil
   const fileName = `model.${ext}`;
   const file = new File([blob], fileName);
 
+  // When no texture bundle is provided, suppress fetch attempts for the
+  // PMX/PMD's inline texture path table. babylon-mmd's default builder issues
+  // `scene._loadFile(rootUrl + texturePath)` per texture; rootUrl is "" for a
+  // File source, so each fetch hits the page origin (`/tex/eye.bmp` etc.) and
+  // 404s. Passing `materialBuilder: null` short-circuits that path and produces
+  // an explicit grey-mesh fallback — the documented behaviour when no bundle
+  // is supplied (see AUTHOR.md §9).
+  const mmdOptions = { referenceFiles };
+  if (referenceFiles.length === 0) {
+    mmdOptions.materialBuilder = null;
+  }
+
   const result = await ImportMeshAsync(file, ctx.scene, {
     pluginExtension: '.' + ext,
     onProgress: onProgress
       ? (ev) => onProgress(ev.lengthComputable ? ev.loaded / ev.total : 0)
       : undefined,
     pluginOptions: {
-      mmdmodel: { referenceFiles },
+      mmdmodel: mmdOptions,
     },
   });
 

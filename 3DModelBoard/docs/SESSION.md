@@ -57,6 +57,13 @@
 - 검증: 정적 서버 + 프리뷰에서 4개 vendor 엔트리 모두 핵심 export 노출 확인 (`Engine`/`ImportMeshAsync`/`AnimationGroup`/`PmxLoader`/`VmdLoader`/`RegisterDxBmpTextureLoader`/`SdefInjector`/`GLTFFileLoader`/`unzipSync`). 페이지 4종 콘솔 에러 0.
 - 비포함(차기): MToon 셰이더 / Bullet WASM 물리 / VRMA(VRM Animation) 포맷 / VRM 0.x BlendShape 제어 / VRM+VMD 자동 리타게팅.
 
+**회귀 픽스 (2026-04-27)** — **Babylon 이관 직후 보고된 4건 정리**
+- **PMD 미리보기 무한 로딩** — `build/mmd-entry.js` 에 `import 'babylon-mmd/esm/Loader/mmdModelLoader.default.js';` 부수효과 import 1줄 추가. babylon-mmd 의 `MmdModelLoader.SharedMaterialBuilder` 정적 슬롯이 default 모듈 import 부수효과로만 채워지는데, 우리는 selective import 만 했었기 때문에 `materialBuilder = null` 인 PmxLoader/PmdLoader 가 만들어지고 PMD 의 다단계 머티리얼/모프 빌드 경로가 빈 metadata 에 매달려 끝나지 않았다. → vendor 재빌드 필수.
+- **`Failed to load resource (404)` 콘솔 노이즈** — `js/viewer-models.js` `loadMMD` 가 `referenceFiles.length === 0` 이면 `pluginOptions.mmdmodel.materialBuilder = null` 로 명시 전달. 번들 미제공 미리보기에서 PMX/PMD 텍스처 path table 에 대한 `scene._loadFile(rootUrl + tex)` fetch 시도(전부 페이지 origin 으로 GET 후 404)를 차단. 텍스처 번들이 있는 경로(폴더/ZIP, 원격 게시물)는 종전대로 정상 빌더 사용.
+- **자동 — 두상 모드 카메라가 발쪽으로 향함** — `js/vrm-adapter.js` `resolveHumanoid.findNode` 가 `scene.getTransformNodeByName` 보다 `skeleton.bones[*].getTransformNode()` 를 먼저 시도하도록 순서 교체(Babylon GLTF 로더가 동명의 TransformNode·Bone 을 둘 다 만들어 두는데, TransformNode 가 본의 부모일 수 있어 chest/neck 좌표가 잡히던 문제). `js/viewer-core.js` `frameHead` 에 모델 전체 `computeWorldMatrix(true)` 강제 + 머리 Y 가 모델 bbox 하단 50% 안으로 떨어지면 bbox 상단 8% 지점으로 폴백하는 방어 코드 추가(폴백 발동 시 `console.warn` 으로 진단 가능).
+- **업로드 영역 점선 박스 깨짐** — `css/style.css` `.file-drop` 에 `display: block;` 1줄. `<label>` 의 default 인라인 디스플레이 때문에 dashed border 가 콘텐츠 폭에만 그려지던 문제.
+- **부수: SDEF/플러그인 등록 분리** — `js/viewer-models.js` `ensureMMDRegistered` 가 플러그인 등록(전역 1회)과 `SdefInjector.OverrideEngineCreateEffect` (엔진별 1회) 를 분리. submit/preview 가 모델을 갈아끼울 때마다 새 Engine 을 만드는데, 단일 boolean 게이트로는 두 번째 엔진부터 SDEF 가 적용되지 않아 PMX/PMD 셰이더가 어긋날 수 있던 잠복 버그를 같이 봉합. WeakSet 으로 게이트해 엔진 dispose 시 자동 정리.
+
 **추가 구현 (2026-04-24 심야)** — **PMX 텍스처 404 해결 · 에러 모달 · 버전 가드**
 - `js/viewer-vrm.js` 로컬 Blob 분기에 전용 `THREE.LoadingManager` 주입. `setURLModifier` 화이트리스트(절대 URL: http/https/data/blob 통과, 상대 경로: 투명 1px PNG data URL로 치환) → 단일 파일 업로드 PMX/PMD 로드 시 텍스처 404 요청이 발생하지 않아 "무한 로딩" 해소. `meshBuilder.manager`/`textureLoader.manager`/`tgaLoader.manager`도 함께 주입(존재 시). 원격 URL 분기는 미변경(리포 posts/ 텍스처 함께 커밋된 게시물 회귀 없음).
 - `js/viewer-vrm.js` 상단에 `typeof loader._getParser !== 'function'` 가드 추가. 향후 three.js 버전 업 시 private API 이름 변경을 무한 로딩 대신 명확한 에러로 안내.

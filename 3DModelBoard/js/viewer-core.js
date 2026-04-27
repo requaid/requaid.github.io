@@ -107,6 +107,11 @@ export function createViewer({ canvas, container }) {
 
   function frameHead() {
     if (!ctx.currentModel || !ctx.humanoid) return false;
+    // Force the entire model hierarchy to recompute world matrices first —
+    // centerModel() shifted root.position just before this call, and bones
+    // need the updated parent transform before getAbsolutePosition() returns
+    // a coordinate in current world space.
+    ctx.currentModel.computeWorldMatrix?.(true);
     const head = ctx.humanoid.getBoneNode?.('head');
     if (!head) return false;
     head.computeWorldMatrix?.(true);
@@ -114,9 +119,22 @@ export function createViewer({ canvas, container }) {
     if (!pos) return false;
     const bi = ctx.currentModel.getHierarchyBoundingVectors?.(true);
     const modelHeight = Math.max(0.01, (bi?.max.y ?? 1.6) - (bi?.min.y ?? 0));
+
+    // Defensive fallback: a humanoid head bone should sit comfortably in the
+    // upper half of the model. If the resolved bone reports a Y below the
+    // model's midpoint (handedness flip, mis-mapped bone, etc.), aim at the
+    // bbox top instead so the camera at least frames the actual head.
+    let targetY = pos.y;
+    if (bi && targetY < bi.min.y + modelHeight * 0.5) {
+      console.warn('[viewer] frameHead: head bone y looked invalid (y=' + pos.y.toFixed(3) +
+        ', model y range ' + bi.min.y.toFixed(3) + '..' + bi.max.y.toFixed(3) +
+        '), falling back to bbox-top.');
+      targetY = bi.min.y + modelHeight * 0.92;
+    }
+
     const headHalf = Math.max(modelHeight * 0.065, 0.08);
     const dist = (headHalf / Math.tan(camera.fov / 2)) * 1.35;
-    camera.target = pos.clone();
+    camera.target = new Vector3(pos.x, targetY, pos.z);
     camera.radius = Math.max(dist, 0.3);
     camera.alpha = -Math.PI / 2;
     camera.beta = Math.PI / 2;

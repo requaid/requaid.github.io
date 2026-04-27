@@ -565,6 +565,7 @@ a:hover { text-decoration: underline; }
   margin-top: 2px;
 }
 .file-drop {
+  display: block;          /* labels are inline by default → border collapsed */
   border: 2px dashed var(--border-strong);
   border-radius: var(--radius);
   padding: 20px;
