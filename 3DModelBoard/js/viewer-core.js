@@ -1,132 +1,169 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { getBoneNode } from './viewer-vrm.js';
+import {
+  Engine, Scene,
+  ArcRotateCamera,
+  Vector3, Color3, Color4,
+  HemisphericLight, DirectionalLight,
+  MeshBuilder,
+} from '@babylonjs/core';
 
 export function createViewer({ canvas, container }) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  const engine = new Engine(canvas, true, {
+    preserveDrawingBuffer: true,   // required for renderer.toDataURL screenshots
+    stencil: true,
+    alpha: true,
+    antialias: true,
+    adaptToDeviceRatio: true,
+  });
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1a1a2e);
+  const scene = new Scene(engine);
+  scene.clearColor = new Color4(0x1a / 255, 0x1a / 255, 0x2e / 255, 1);
+  scene.ambientColor = new Color3(0.4, 0.4, 0.4);
 
-  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-  camera.position.set(0, 1.2, 4);
+  const camera = new ArcRotateCamera(
+    'cam',
+    -Math.PI / 2,        // alpha — facing model from -Z
+    Math.PI / 2.2,       // beta  — slightly above horizon
+    4,                   // radius
+    new Vector3(0, 1.0, 0),
+    scene
+  );
+  camera.attachControl(canvas, true);
+  camera.fov = (30 * Math.PI) / 180;        // match prior 30° vertical FOV
+  camera.minZ = 0.1;
+  camera.maxZ = 100;
+  camera.lowerRadiusLimit = 0.5;
+  camera.upperRadiusLimit = 15;
+  camera.upperBetaLimit = Math.PI * 0.95;
+  camera.wheelDeltaPercentage = 0.02;
+  camera.pinchDeltaPercentage = 0.02;
+  camera.inertia = 0.85;
 
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  dirLight.position.set(3, 5, 3);
-  scene.add(dirLight);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  scene.add(new THREE.HemisphereLight(0x88aaff, 0x443322, 0.4));
+  const dirLight = new DirectionalLight('dir', new Vector3(-1, -1.5, -1).normalize(), scene);
+  dirLight.intensity = 1.2;
+  dirLight.diffuse = new Color3(1, 1, 1);
 
-  const grid = new THREE.GridHelper(10, 20, 0x444466, 0x333355);
-  scene.add(grid);
+  const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
+  hemi.intensity = 0.6;
+  hemi.diffuse = new Color3(0.53, 0.67, 1);     // 0x88aaff
+  hemi.groundColor = new Color3(0.27, 0.2, 0.13); // 0x443322
 
-  const controls = new OrbitControls(camera, canvas);
-  controls.target.set(0, 1.0, 0);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.1;
-  controls.minDistance = 0.5;
-  controls.maxDistance = 15;
-  controls.maxPolarAngle = Math.PI * 0.9;
+  const grid = buildGrid(scene);
 
-  const clock = new THREE.Clock();
-
-  function onResize() {
-    const w = container.clientWidth;
-    const h = container.clientHeight;
-    if (w === 0 || h === 0) return;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  }
-  const ro = new ResizeObserver(onResize);
+  const ro = new ResizeObserver(() => engine.resize());
   ro.observe(container);
-  onResize();
+  engine.resize();
 
   const ctx = {
-    renderer, scene, camera, controls, clock,
-    mixer: null,
-    currentModel: null,
-    currentVRM: null,
+    engine,
+    scene,
+    camera,
+    grid,
+    currentModel: null,        // root TransformNode/AbstractMesh of the loaded model
+    humanoid: null,            // { getBoneNode(humanoidName) } or null
+    modelFormat: null,         // 'vrm' | 'pmx' | 'pmd' | null
+    animationGroup: null,      // active Babylon AnimationGroup
+    tposeSnapshot: null,       // baseline rotationQuaternions per node
     _beforeRender: [],
   };
 
-  function centerModel(obj) {
-    const box = new THREE.Box3().setFromObject(obj);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    obj.position.x -= center.x;
-    obj.position.y -= box.min.y;
-    obj.position.z -= center.z;
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const targetY = size.y * 0.55;
-    camera.position.set(0, targetY, maxDim * 2.2);
-    controls.target.set(0, targetY, 0);
-    controls.update();
+  function centerModel(root) {
+    if (!root) return;
+    root.computeWorldMatrix?.(true);
+    const bi = root.getHierarchyBoundingVectors?.(true) || boundsOfMesh(root);
+    if (!bi) return;
+    const sx = bi.max.x - bi.min.x;
+    const sy = bi.max.y - bi.min.y;
+    const sz = bi.max.z - bi.min.z;
+    const cx = (bi.max.x + bi.min.x) / 2;
+    const cz = (bi.max.z + bi.min.z) / 2;
+    if (root.position) {
+      root.position.x -= cx;
+      root.position.y -= bi.min.y;
+      root.position.z -= cz;
+    }
+    const maxDim = Math.max(sx, sy, sz, 0.5);
+    camera.target = new Vector3(0, sy * 0.55, 0);
+    camera.radius = maxDim * 2.2;
   }
   ctx.centerModel = centerModel;
 
   function frameFullBody() {
     if (!ctx.currentModel) return false;
-    const box = new THREE.Box3().setFromObject(ctx.currentModel);
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const targetY = size.y * 0.55;
-    camera.position.set(0, targetY, maxDim * 2.2);
-    controls.target.set(0, targetY, 0);
-    controls.update();
-    renderer.render(scene, camera);
+    ctx.currentModel.computeWorldMatrix?.(true);
+    const bi = ctx.currentModel.getHierarchyBoundingVectors?.(true);
+    if (!bi) return false;
+    const sx = bi.max.x - bi.min.x;
+    const sy = bi.max.y - bi.min.y;
+    const sz = bi.max.z - bi.min.z;
+    const maxDim = Math.max(sx, sy, sz, 0.5);
+    camera.target = new Vector3((bi.min.x + bi.max.x) / 2, bi.min.y + sy * 0.55, (bi.min.z + bi.max.z) / 2);
+    camera.radius = maxDim * 2.2;
+    camera.alpha = -Math.PI / 2;
+    camera.beta = Math.PI / 2.2;
+    scene.render();
     return true;
   }
   ctx.frameFullBody = frameFullBody;
 
   function frameHead() {
-    if (!ctx.currentModel) return false;
-    const head = getBoneNode(ctx, 'head');
+    if (!ctx.currentModel || !ctx.humanoid) return false;
+    const head = ctx.humanoid.getBoneNode?.('head');
     if (!head) return false;
-    const pos = new THREE.Vector3();
-    head.getWorldPosition(pos);
-    const box = new THREE.Box3().setFromObject(ctx.currentModel);
-    const modelHeight = Math.max(0.01, box.max.y - box.min.y);
+    head.computeWorldMatrix?.(true);
+    const pos = head.getAbsolutePosition?.() ?? head.position;
+    if (!pos) return false;
+    const bi = ctx.currentModel.getHierarchyBoundingVectors?.(true);
+    const modelHeight = Math.max(0.01, (bi?.max.y ?? 1.6) - (bi?.min.y ?? 0));
     const headHalf = Math.max(modelHeight * 0.065, 0.08);
-    const fovRad = camera.fov * Math.PI / 180;
-    const dist = (headHalf / Math.tan(fovRad / 2)) * 1.35;
-    camera.position.set(pos.x, pos.y, pos.z + dist);
-    controls.target.copy(pos);
-    controls.update();
-    renderer.render(scene, camera);
+    const dist = (headHalf / Math.tan(camera.fov / 2)) * 1.35;
+    camera.target = pos.clone();
+    camera.radius = Math.max(dist, 0.3);
+    camera.alpha = -Math.PI / 2;
+    camera.beta = Math.PI / 2;
+    scene.render();
     return true;
   }
   ctx.frameHead = frameHead;
 
-  function animate() {
-    requestAnimationFrame(animate);
-    const delta = clock.getDelta();
-    for (const fn of ctx._beforeRender) fn(delta);
-    if (ctx.mixer) ctx.mixer.update(delta);
-    if (ctx.currentVRM) ctx.currentVRM.update(delta);
-    controls.update();
-    renderer.render(scene, camera);
-  }
-  animate();
+  scene.registerBeforeRender(() => {
+    const dt = engine.getDeltaTime() / 1000;
+    for (const fn of ctx._beforeRender) {
+      try { fn(dt); } catch (e) { console.error('beforeRender hook failed', e); }
+    }
+  });
+
+  engine.runRenderLoop(() => {
+    scene.render();
+  });
 
   ctx.dispose = () => {
     ro.disconnect();
-    if (ctx.currentModel) {
-      scene.remove(ctx.currentModel);
-      ctx.currentModel.traverse?.(obj => {
-        if (obj.geometry) obj.geometry.dispose?.();
-        if (obj.material) {
-          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-          mats.forEach(m => m.dispose?.());
-        }
-      });
-    }
-    renderer.dispose();
+    engine.stopRenderLoop();
+    scene.dispose();
+    engine.dispose();
   };
 
   return ctx;
+}
+
+function boundsOfMesh(m) {
+  if (!m?.getBoundingInfo) return null;
+  const bi = m.getBoundingInfo().boundingBox;
+  return { min: bi.minimumWorld, max: bi.maximumWorld };
+}
+
+function buildGrid(scene) {
+  const size = 10, divisions = 20;
+  const step = size / divisions;
+  const half = size / 2;
+  const lines = [];
+  for (let i = 0; i <= divisions; i++) {
+    const t = -half + i * step;
+    lines.push([new Vector3(-half, 0, t), new Vector3(half, 0, t)]);
+    lines.push([new Vector3(t, 0, -half), new Vector3(t, 0, half)]);
+  }
+  const mesh = MeshBuilder.CreateLineSystem('grid', { lines }, scene);
+  mesh.color = new Color3(0x33 / 255, 0x33 / 255, 0x55 / 255);
+  mesh.isPickable = false;
+  return mesh;
 }

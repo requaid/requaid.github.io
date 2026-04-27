@@ -28,11 +28,15 @@ export const CONFIG = Object.freeze({
   POSTS_DIR: 'posts/',
 
   IDB_NAME: '3DModelBoard',
-  IDB_VERSION: 1,
+  IDB_VERSION: 2,
+
+  TEXTURE_EXT: ['bmp', 'png', 'jpg', 'jpeg', 'tga', 'dds', 'spa', 'sph'],
+  MAX_TEXTURE_BUNDLE_SIZE: 25 * 1024 * 1024,
 
   PATH_WHITELIST: /^posts\/[A-Za-z0-9_\-]+\/[A-Za-z0-9_\-.]+$/,
   IMAGE_PATH_WHITELIST: /^(posts\/[A-Za-z0-9_\-]+\/[A-Za-z0-9_\-.]+\.(?:png|jpg|jpeg|webp)|assets\/[A-Za-z0-9_\-.]+\.(?:png|jpg|jpeg|webp))$/i,
   BG_PATH_WHITELIST: /^posts\/[A-Za-z0-9_\-]+\/background\.(?:png|jpg|jpeg|webp)$/i,
+  TEXTURE_PATH_WHITELIST: /^posts\/[A-Za-z0-9_\-]+\/textures\/[A-Za-z0-9_\-./]+\.(?:bmp|png|jpg|jpeg|tga|dds|spa|sph)$/i,
 });
 
 export const TOKEN = {

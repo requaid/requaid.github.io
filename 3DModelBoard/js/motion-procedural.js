@@ -1,38 +1,61 @@
-import * as THREE from 'three';
-import { getBoneTrackName } from './viewer-vrm.js';
+import { Animation, AnimationGroup, Quaternion } from '@babylonjs/core';
 
-function quatTrack(boneName, times, eulerFrames) {
-  if (!boneName) return null;
-  const values = [];
-  const q = new THREE.Quaternion();
-  const e = new THREE.Euler();
-  for (const ef of eulerFrames) {
-    e.set(ef[0], ef[1], ef[2]);
-    q.setFromEuler(e);
-    values.push(q.x, q.y, q.z, q.w);
-  }
-  return new THREE.QuaternionKeyframeTrack(boneName + '.quaternion', times, values);
-}
+const FPS = 30;
 
-function buildClip(ctx, name, duration, defs) {
-  const tracks = [];
-  for (const def of defs) {
-    const boneName = getBoneTrackName(ctx, def.bone);
-    if (!boneName) continue;
-    if (def.type === 'quat') {
-      const t = quatTrack(boneName, def.times, def.values);
-      if (t) tracks.push(t);
+function ensureQuat(node) {
+  if (!node) return null;
+  if (!node.rotationQuaternion) {
+    if (node.rotation) {
+      node.rotationQuaternion = Quaternion.FromEulerAngles(
+        node.rotation.x || 0, node.rotation.y || 0, node.rotation.z || 0
+      );
+    } else {
+      node.rotationQuaternion = Quaternion.Identity();
     }
   }
-  if (!tracks.length) return null;
-  return new THREE.AnimationClip(name, duration, tracks);
+  return node;
+}
+
+function quatAnimationFor(node, name, timesSec, eulerFrames, restQuat) {
+  const anim = new Animation(
+    name,
+    'rotationQuaternion',
+    FPS,
+    Animation.ANIMATIONTYPE_QUATERNION,
+    Animation.ANIMATIONLOOPMODE_CYCLE
+  );
+  const keys = timesSec.map((t, i) => {
+    const e = eulerFrames[i];
+    const delta = Quaternion.FromEulerAngles(e[0] || 0, e[1] || 0, e[2] || 0);
+    return { frame: Math.round(t * FPS), value: restQuat.multiply(delta) };
+  });
+  anim.setKeys(keys);
+  return anim;
+}
+
+function buildGroup(ctx, name, durationSec, defs) {
+  const group = new AnimationGroup(name, ctx.scene);
+  let added = 0;
+  for (const def of defs) {
+    if (def.type !== 'quat') continue;
+    const node = ctx.humanoid?.getBoneNode?.(def.bone);
+    if (!node) continue;
+    ensureQuat(node);
+    const restQ = ctx.tposeSnapshot?.get(node)?.clone() || node.rotationQuaternion.clone();
+    const anim = quatAnimationFor(node, `${name}-${def.bone}`, def.times, def.values, restQ);
+    group.addTargetedAnimation(anim, node);
+    added++;
+  }
+  if (added === 0) { group.dispose(); return null; }
+  group.normalize(0, Math.round(durationSec * FPS));
+  return group;
 }
 
 export function createIdleClip(ctx) {
   const d = 2.0;
   const t = [0, 0.5, 1.0, 1.5, 2.0];
   const a = 0.02;
-  return buildClip(ctx, 'idle', d, [
+  return buildGroup(ctx, 'idle', d, [
     { bone: 'spine', type: 'quat', times: t, values: [
       [a, 0, 0], [0, 0, 0], [-a*0.5, 0, 0], [0, 0, 0], [a, 0, 0],
     ] },
@@ -52,7 +75,7 @@ export function createWalkClip(ctx) {
   const d = 1.0;
   const t = [0, 0.25, 0.5, 0.75, 1.0];
   const legAmp = 0.4, armAmp = 0.25, kneeAmp = 0.5;
-  return buildClip(ctx, 'walk', d, [
+  return buildGroup(ctx, 'walk', d, [
     { bone: 'leftUpperLeg', type: 'quat', times: t, values: [
       [-legAmp, 0, 0], [0, 0, 0], [legAmp*0.5, 0, 0], [0, 0, 0], [-legAmp, 0, 0],
     ] },
@@ -81,7 +104,7 @@ export function createRunClip(ctx) {
   const d = 0.6;
   const t = [0, 0.15, 0.3, 0.45, 0.6];
   const legAmp = 0.65, armAmp = 0.5, kneeAmp = 0.9;
-  return buildClip(ctx, 'run', d, [
+  return buildGroup(ctx, 'run', d, [
     { bone: 'leftUpperLeg', type: 'quat', times: t, values: [
       [-legAmp, 0, 0], [0, 0, 0], [legAmp*0.4, 0, 0], [0, 0, 0], [-legAmp, 0, 0],
     ] },
@@ -112,7 +135,7 @@ export function createRunClip(ctx) {
 export function createDanceClip(ctx) {
   const d = 4.0;
   const t = [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
-  return buildClip(ctx, 'dance', d, [
+  return buildGroup(ctx, 'dance', d, [
     { bone: 'spine', type: 'quat', times: t, values: [
       [0, 0.05, 0.06], [0, -0.05, -0.06], [0, 0.05, 0.06], [0, -0.05, -0.06],
       [0.05, 0, 0.04], [-0.05, 0, -0.04], [0.05, 0, 0.04], [-0.05, 0, -0.04],

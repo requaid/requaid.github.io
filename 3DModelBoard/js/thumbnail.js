@@ -1,8 +1,13 @@
 import { CONFIG } from './config.js';
 
-export function captureFromRenderer(renderer) {
+export function captureFromViewer(ctx) {
   try {
-    return renderer.domElement.toDataURL('image/png');
+    if (ctx?.scene && ctx?.engine) {
+      try { ctx.scene.render(); } catch (_) {}
+    }
+    const canvas = ctx?.engine?.getRenderingCanvas?.();
+    if (!canvas) return null;
+    return canvas.toDataURL('image/png');
   } catch (e) {
     console.warn('thumbnail capture failed', e);
     return null;
@@ -30,11 +35,8 @@ function cropToAspect(imgW, imgH, outW, outH) {
   return { sX, sY, sW, sH };
 }
 
-export async function captureWithAspect(renderer, aspect = 'square', ctx = null) {
-  if (ctx && ctx.scene && ctx.camera) {
-    try { renderer.render(ctx.scene, ctx.camera); } catch (_) {}
-  }
-  const src = captureFromRenderer(renderer);
+export async function captureWithAspect(ctx, aspect = 'square') {
+  const src = captureFromViewer(ctx);
   if (!src) return null;
   return cropAndResizeDataURL(src, aspect);
 }

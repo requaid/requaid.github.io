@@ -17,3 +17,35 @@ export const PMX_BONE_MAP = {
 
 export const MMD_TO_VRM_BONE = {};
 for (const [vrm, mmd] of Object.entries(PMX_BONE_MAP)) MMD_TO_VRM_BONE[mmd] = vrm;
+
+export function buildMMDHumanoidFromBones(skeletons) {
+  if (!skeletons?.length) return null;
+  const allBones = [];
+  for (const skel of skeletons) {
+    for (const b of skel.bones || []) allBones.push(b);
+  }
+  if (!allBones.length) return null;
+
+  const cache = new Map();
+  const findBoneNode = (mmdName) => {
+    const bone = allBones.find(b => b.name === mmdName);
+    if (!bone) return null;
+    return bone.getTransformNode?.() || bone;
+  };
+
+  return {
+    version: 'mmd',
+    map: { ...PMX_BONE_MAP },
+    getBoneNode(humanoidName) {
+      if (cache.has(humanoidName)) return cache.get(humanoidName);
+      const mmdName = PMX_BONE_MAP[humanoidName];
+      const node = mmdName ? findBoneNode(mmdName) : null;
+      cache.set(humanoidName, node);
+      return node;
+    },
+  };
+}
+
+export function getBoneNode(ctx, humanoidName) {
+  return ctx?.humanoid?.getBoneNode?.(humanoidName) || null;
+}

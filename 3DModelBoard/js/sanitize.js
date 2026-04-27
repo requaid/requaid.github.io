@@ -127,6 +127,14 @@ export async function checkMagicBytes(file, ext) {
         return u8[0] === 0xFF && u8[1] === 0xD8 && u8[2] === 0xFF;
       case 'webp':
         return asc.startsWith('RIFF') && asc.slice(8, 12) === 'WEBP';
+      case 'bmp':
+        return u8[0] === 0x42 && u8[1] === 0x4D;
+      case 'dds':
+        return asc.startsWith('DDS ');
+      case 'tga':
+        return u8.length >= 18;
+      case 'spa': case 'sph':
+        return u8[0] === 0x42 && u8[1] === 0x4D;
       default:
         return false;
     }

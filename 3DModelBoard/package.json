@@ -1,0 +1,18 @@
+{
+  "name": "3dmodelboard",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Static 3D model board (VRM/PMX/PMD). Vendor bundle build only — runtime is pure static HTML.",
+  "scripts": {
+    "clean:vendor": "node -e \"require('fs').rmSync('vendor',{recursive:true,force:true})\"",
+    "build:vendor": "npm run clean:vendor && esbuild build/core-entry.js build/loaders-entry.js build/mmd-entry.js build/fflate-entry.js --bundle --format=esm --splitting --outdir=vendor --target=es2022 --minify",
+    "build:vendor:dev": "npm run clean:vendor && esbuild build/core-entry.js build/loaders-entry.js build/mmd-entry.js build/fflate-entry.js --bundle --format=esm --splitting --outdir=vendor --target=es2022 --sourcemap"
+  },
+  "devDependencies": {
+    "@babylonjs/core": "9.2.0",
+    "@babylonjs/loaders": "9.2.0",
+    "babylon-mmd": "1.2.0",
+    "esbuild": "0.24.2",
+    "fflate": "0.8.2"
+  }
+}

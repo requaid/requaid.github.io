@@ -47,7 +47,7 @@ GitHub → Settings → **Developer settings → Personal access tokens → Fine
 1. **모델 파일 선택/드롭** — `.vrm`, `.pmx`, `.pmd`, 최대 100MB
    - 선택 즉시 오른쪽에 미리보기 로드.
    - 파일 크기 25MB 초과 → PR 버튼 **비활성화**, 로컬 저장만 가능.
-   - **PMX/PMD는 같은 폴더의 텍스처(.bmp/.png/.tga)를 참조**합니다. 현재 단일 파일 업로드만 지원하므로 텍스처 없이 로드되어 재질이 투명/기본색으로 보일 수 있습니다 (추후 번들 업로드 지원 예정).
+   - **PMX/PMD 텍스처 번들** — PMX/PMD를 선택하면 "텍스처 번들" 섹션이 노출됩니다. **폴더 업로드**(`<input webkitdirectory>` 로 PMX와 `tex/` 폴더를 함께 선택) 또는 **ZIP 업로드** 중 선택 가능. 합 25MB 이하, 허용 확장자 `.bmp/.png/.jpg/.jpeg/.tga/.dds/.spa/.sph`. 번들 없이 로드하면 회색 모델로 표시됩니다.
    - 로딩에 45초 이상 걸리면 **타임아웃 에러 모달**이 뜹니다. 모달의 [📋 로그 복사]로 원인 로그(UA, 요약, 스택, 최근 콘솔)를 클립보드에 복사해 관리자에게 전달할 수 있습니다.
 2. **메타 입력** — 제목(필수), 작성자, 태그(쉼표 구분, 최대 8개), 설명.
 3. **썸네일** — 4가지 모드 중 선택
@@ -70,8 +70,9 @@ GitHub → Settings → **Developer settings → Personal access tokens → Fine
    ├─ 3. getBranchSha(main)        → base commit SHA
    ├─ 4. createBranch(post/<slug>-<ts>)
    ├─ 5. putFile(posts/<slug>/model.<ext>, base64)
+   ├─ 5b. (PMX/PMD 번들) putFile(posts/<slug>/textures/<rel>, base64) × N
    ├─ 6. putFile(posts/<slug>/thumbnail.png, base64)
-   ├─ 7. putFile(posts/<slug>/meta.json, base64)
+   ├─ 7. putFile(posts/<slug>/meta.json, base64)   ← textureBundlePaths 포함
    ├─ 8. getFileContent(posts/posts.json)
    ├─ 9. putFile(posts/posts.json, append한 배열)
    └─10. createPullRequest(upstream:main ← fork:post/<slug>-<ts>)
@@ -123,8 +124,8 @@ GitHub → Settings → **Developer settings → Personal access tokens → Fine
 (자세한 근거는 [PLAN 문서](../../../../Users/mjj/.claude/plans/d-mjj-git-3dmodelboard-cuddly-matsumoto.md)의 §8 참고 — 아래는 요점)
 
 - **PAT 저장 안 함** — localStorage/sessionStorage/IndexedDB/쿠키 어디에도 쓰지 않음. 세션 JS 변수만.
-- **CDN 고정** — `cdn.jsdelivr.net`의 불변 버전 경로만. `esm.sh` 같은 동적 트랜스파일러 사용 안 함.
-- **CSP** — 각 HTML `<meta http-equiv="Content-Security-Policy">`로 `script-src 'self' https://cdn.jsdelivr.net`, `object-src 'none'`, `form-action 'self'`, `connect-src` 화이트리스트.
+- **벤더 자체 번들** — Babylon/babylon-mmd/fflate는 `vendor/` 디렉터리에 **esbuild로 사전 빌드된 자체 번들**을 커밋해 사용합니다. 외부 CDN을 런타임에 부르지 않으므로 CSP `script-src 'self'` 만으로 충분.
+- **CSP** — 각 HTML `<meta http-equiv="Content-Security-Policy">`로 `script-src 'self'`, `object-src 'none'`, `form-action 'self'`, `connect-src` 화이트리스트.
 - **XSS 방지** — 사용자 콘텐츠는 `textContent`/`setAttribute`로만. `innerHTML` 미사용.
 - **경로 화이트리스트** — 썸네일/모델 경로는 `^posts/<slug>/...$` 정규식으로만 허용. 임의 URL 차단.
 - **파일 매직바이트 검증** — 확장자 외에 VRM=`glTF`, PMX=`PMX `, VMD=`Vocaloid Motion Data`, PNG/JPEG/WebP 헤더 확인. 통과 못 하면 로드 거부.
@@ -139,7 +140,7 @@ GitHub → Settings → **Developer settings → Personal access tokens → Fine
 | --- | --- |
 | PAT 유출 (XSS) | innerHTML 미사용 + 토큰이 DOM 근처에 없음 + 세션 메모리만 + CSP |
 | PAT 유출 (Referrer/로그) | referrer no-referrer, 로그/토스트에 토큰 문자열 미포함 |
-| 악성 CDN 응답 | jsdelivr 버전 핀 + CSP script-src 화이트리스트 |
+| 악성 CDN 응답 | 자체 vendor 번들 + CSP script-src 'self' (런타임 외부 호출 0건) |
 | iframe 내장 공격 | JS frame-busting |
 | 스팸 PR | Branch protection + 수동 리뷰 |
 | 악성 모델 파일 | 매직바이트 + 크기 상한 + try/catch로 파서 예외 격리 |
@@ -171,6 +172,21 @@ python -m http.server 8000     # 또는 npx http-server -p 8000 -c-1
 
 로컬에서 PR 플로우까지 테스트하려면 PAT를 `localhost`에서 입력하게 됩니다. 신뢰할 수 있는 로컬 머신에서만 수행하세요.
 
+### 7-1. vendor 번들 빌드 (의존성 변경 시에만)
+
+`vendor/core-entry.js`, `vendor/loaders-entry.js`, `vendor/mmd-entry.js`, `vendor/fflate-entry.js` 는 **리포에 커밋된 산출물**입니다. 평소 개발에는 빌드가 필요 없습니다.
+
+다음 경우에만 다시 빌드:
+- `package.json` 의 `@babylonjs/core` / `@babylonjs/loaders` / `babylon-mmd` / `fflate` 버전을 올렸을 때
+- `build/*-entry.js` 의 selective import 목록을 수정했을 때
+
+```bash
+npm install
+npm run build:vendor   # esbuild → vendor/*.js 갱신
+```
+
+> ⚠️ `build/mmd-entry.js` 를 `export * from 'babylon-mmd';` 로 되돌리지 마세요. 전체 export는 Bullet WASM 워커 모듈을 끌어들여 번들 크기·CSP·초기화 비용이 모두 폭증합니다. 필요한 export만 명시적으로 재export 하는 디시플린을 유지합니다.
+
 ---
 
 ## 8. 폴더 구조
@@ -179,26 +195,35 @@ python -m http.server 8000     # 또는 npx http-server -p 8000 -c-1
 3DModelBoard/
 ├── index.html · view.html · submit.html · settings.html
 ├── css/style.css
+├── vendor/                 esbuild로 미리 번들된 의존성 (커밋됨)
+│   ├── core-entry.js       @babylonjs/core 9.2 (필요 export만)
+│   ├── loaders-entry.js    @babylonjs/loaders 9.2 (GLTF)
+│   ├── mmd-entry.js        babylon-mmd 1.2 (Pmx/Pmd/Vmd 로더 + SDEF + DxBmp)
+│   └── fflate-entry.js     fflate 0.8 (unzipSync)
+├── build/                  esbuild 입력 entry (재빌드 시에만 사용)
+│   └── *-entry.js
 ├── js/
 │   ├── config.js           리포/제한/경로 화이트리스트 + frame-busting
 │   ├── sanitize.js         XSS 방지 DOM 헬퍼·경로 검증·매직바이트
-│   ├── idb.js              IndexedDB 래퍼
-│   ├── post-index.js       posts.json + 로컬 병합 로더
+│   ├── idb.js              IndexedDB 래퍼 (v2: textureBundle 마이그레이션)
+│   ├── post-index.js       posts.json + 로컬 병합 + textureBundlePaths 정규화
 │   ├── header.js · ui.js   상단 네비·토스트
-│   ├── viewer-core.js      three.js 씬/카메라/OrbitControls
-│   ├── viewer-vrm.js       VRM·MMD 로딩 + 본 유틸 + T-포즈
-│   ├── viewer-motion.js    AnimationMixer 래퍼
-│   ├── motion-procedural.js idle/walk/run/dance 클립 빌더
-│   ├── motion-files.js     VMD/BVH 파일 로더
+│   ├── viewer-core.js      Babylon Engine/Scene/ArcRotateCamera + 라이트
+│   ├── viewer-models.js    VRM/PMX/PMD 통합 로더 (loadVRM/loadMMD)
+│   ├── vrm-adapter.js      GLB 헤더 파싱 + VRMC_vrm/VRM 휴머노이드 본 추출
+│   ├── viewer-motion.js    Babylon AnimationGroup 래퍼
+│   ├── motion-procedural.js idle/walk/run/dance 클립 빌더 (Quaternion Animation)
+│   ├── motion-files.js     VMD(babylon-mmd VmdLoader) + BVH 자체 파서
 │   ├── drag-drop.js        dropzone 카운터/필터
-│   ├── thumbnail.js        스냅샷·이미지 정규화
-│   ├── github-api.js       fetch 기반 GitHub REST 래퍼 + PR 플로우
+│   ├── thumbnail.js        스냅샷·이미지 정규화 (engine.canvas.toDataURL)
+│   ├── github-api.js       fetch 기반 GitHub REST 래퍼 + PR 플로우 (텍스처 번들 다중 PUT)
 │   └── list.js · view.js · submit.js · settings.js
 ├── posts/
 │   ├── posts.json          게시물 인덱스 (배열)
 │   └── <slug>/             게시물별 폴더
-│       ├── meta.json
+│       ├── meta.json       (textureBundlePaths 포함)
 │       ├── model.<ext>
+│       ├── textures/       PMX/PMD 텍스처 번들 (선택)
 │       └── thumbnail.png
 ├── assets/placeholder.svg
 └── docs/USER.md · docs/AUTHOR.md
@@ -210,9 +235,11 @@ python -m http.server 8000     # 또는 npx http-server -p 8000 -c-1
 
 | 종류 | 확장자 | 처리기 |
 | --- | --- | --- |
-| 모델 | `.vrm` | `@pixiv/three-vrm` (VRMLoaderPlugin) |
-| 모델 | `.pmx`, `.pmd` | `three/addons/loaders/MMDLoader` |
-| 모션 | `.vmd` | `MMDLoader.loadAnimation` (blob URL) + VRM humanoid 본 매핑 |
-| 모션 | `.bvh` | `three/addons/loaders/BVHLoader` |
+| 모델 | `.vrm` | Babylon `GLTFFileLoader` + 자체 VRMC_vrm/VRM 확장 파서 (휴머노이드 본 매핑) |
+| 모델 | `.pmx`, `.pmd` | `babylon-mmd` `PmxLoader` / `PmdLoader` (`pluginOptions.mmdmodel.referenceFiles` 로 텍스처 번들 해석) |
+| 모션 | `.vmd` | `babylon-mmd` `VmdLoader` → boneTracks 를 Babylon `Animation` 으로 변환 (PMX/PMD 전용) |
+| 모션 | `.bvh` | 자체 파서 (~120 LoC, HIERARCHY/MOTION 토큰화 → 본별 Quaternion Animation, VRM/PMX 양쪽) |
 
-내장 모션(스탠딩/걷기/달리기/춤추기)은 VRM humanoid 또는 PMX 표준 본 이름(`センター`, `上半身`, `左腕` 등)에 맞춰 프로시저럴로 생성됩니다. 해당 본이 없는 모델은 상태바에 "본을 찾을 수 없음"이 표시되고 적용되지 않습니다.
+내장 모션(스탠딩/걷기/달리기/춤추기)은 VRM humanoid 또는 PMX 표준 본 이름(`センター`, `上半身`, `左腕` 등)에 맞춰 Babylon `Animation` 객체로 프로시저럴 생성되어 `AnimationGroup` 으로 묶입니다. 해당 본이 없는 모델은 상태바에 "본을 찾을 수 없음"이 표시되고 적용되지 않습니다.
+
+> MToon 셰이더는 미지원 — VRM 머티리얼은 Babylon GLTF 로더가 만든 PBR 폴백으로 표시됩니다. Bullet WASM 물리도 미사용 (정지/절차적 모션 위주이므로 부트 비용·CSP 복잡도 회피). VRM에 VMD 직접 적용은 MVP 범위 외(리타게터 미연동).

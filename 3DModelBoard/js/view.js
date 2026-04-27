@@ -1,11 +1,11 @@
 import { CONFIG } from './config.js';
 import { loadPost } from './post-index.js';
 import { createViewer } from './viewer-core.js';
-import { loadVRM, loadMMD } from './viewer-vrm.js';
+import { loadVRM, loadMMD } from './viewer-models.js';
 import { createMotionController } from './viewer-motion.js';
 import { loadVMDClip, loadBVHClip } from './motion-files.js';
 import { attachDropzone } from './drag-drop.js';
-import { captureFromRenderer, downloadDataURL } from './thumbnail.js';
+import { captureFromViewer, downloadDataURL } from './thumbnail.js';
 import { setText, formatDate, getExt, isMotionExt, checkMagicBytes, formatBytes } from './sanitize.js';
 import { toast, toastError, toastOk } from './ui.js';
 import { installErrorLog, withTimeout } from './error-log.js';
@@ -45,6 +45,36 @@ let bgObjectUrl = null;
 window.addEventListener('beforeunload', () => {
   if (bgObjectUrl) { try { URL.revokeObjectURL(bgObjectUrl); } catch {} bgObjectUrl = null; }
 });
+
+async function loadTextureBundle(post) {
+  if (post.format !== 'pmx' && post.format !== 'pmd') return [];
+  if (post.source === 'local') {
+    const items = post.textureBundle || [];
+    return items.map(it => {
+      const f = new File([it.blob], it.name.split('/').pop());
+      Object.defineProperty(f, 'webkitRelativePath', { value: it.name });
+      return f;
+    });
+  }
+  const paths = post.textureBundlePaths || [];
+  if (paths.length === 0) return [];
+  const baseUrl = post.modelPath.replace(/[^/]+$/, '');
+  const out = [];
+  for (const rel of paths) {
+    try {
+      const res = await fetch(baseUrl + rel);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      const relUnderTex = rel.replace(/^textures\//, '');
+      const f = new File([blob], relUnderTex.split('/').pop());
+      Object.defineProperty(f, 'webkitRelativePath', { value: relUnderTex });
+      out.push(f);
+    } catch (e) {
+      console.warn('[view] texture fetch failed', rel, e);
+    }
+  }
+  return out;
+}
 
 function applyBackground(post, ctx) {
   let url = null;
@@ -95,21 +125,16 @@ async function bootstrap(id) {
   applyBackground(post, ctx);
 
   try {
+    const modelBlob = post.source === 'local'
+      ? post.modelBlob
+      : await fetch(post.modelPath).then(r => r.blob());
+    const onProgress = p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%');
     if (post.format === 'vrm') {
-      // VRM: 로컬은 Blob 직접 전달(GLTFLoader.parse 사용), 원격은 URL 문자열
-      const modelTarget = post.source === 'local' ? post.modelBlob : post.modelPath;
-      await withTimeout(
-        loadVRM(ctx, modelTarget, { onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%') }),
-        MODEL_LOAD_TIMEOUT_MS, '모델'
-      );
+      await withTimeout(loadVRM(ctx, modelBlob, onProgress), MODEL_LOAD_TIMEOUT_MS, '모델');
     } else {
-      // PMX/PMD: 로컬은 Blob 직접 전달(fetch(blob:) CSP 우회), 원격은 URL 문자열
-      const modelTarget = post.source === 'local' ? post.modelBlob : post.modelPath;
+      const referenceFiles = await loadTextureBundle(post);
       await withTimeout(
-        loadMMD(ctx, modelTarget, {
-          onProgress: p => setText(overlayText, '모델 로딩중... ' + Math.round(p*100) + '%'),
-          ext: post.format,
-        }),
+        loadMMD(ctx, modelBlob, { onProgress, ext: post.format, referenceFiles }),
         MODEL_LOAD_TIMEOUT_MS, '모델'
       );
     }
@@ -122,7 +147,7 @@ async function bootstrap(id) {
       summary: e.message || String(e),
       detail: e.stack || '',
       hint: isPmxLike
-        ? 'PMX/PMD 파일은 같은 폴더의 텍스처(.bmp/.png/.tga 등)를 참조합니다. 현재 단일 파일 업로드만 지원하므로 텍스처 없이 로드됩니다. 타임아웃이 발생한 경우 텍스처가 아닌 다른 원인일 수 있습니다.'
+        ? 'PMX/PMD 파일은 같은 폴더의 텍스처(.bmp/.png/.tga 등)를 참조합니다. 텍스처 번들이 없으면 회색으로 표시되며, 타임아웃이 발생한 경우 다른 원인일 수 있습니다.'
         : undefined,
       onClose: () => { location.href = 'index.html'; },
     });
@@ -153,7 +178,7 @@ async function bootstrap(id) {
   });
 
   snapshotBtn.addEventListener('click', () => {
-    const dataURL = captureFromRenderer(ctx.renderer);
+    const dataURL = captureFromViewer(ctx);
     if (!dataURL) { toastError('스냅샷 실패'); return; }
     downloadDataURL(dataURL, (post.id || 'snapshot') + '.png');
     toastOk('저장했습니다.');
@@ -174,8 +199,8 @@ async function bootstrap(id) {
       setText(statusEl, ext.toUpperCase() + ' 로딩중...');
       try {
         let clip;
-        if (ext === 'vmd') clip = await loadVMDClip(file, ctx.currentModel);
-        else clip = await loadBVHClip(file);
+        if (ext === 'vmd') clip = await loadVMDClip(file, ctx);
+        else clip = await loadBVHClip(file, ctx);
         const ok = motion.playClip(clip, file.name);
         if (ok) setActiveMotionButton(null);
       } catch (e) {

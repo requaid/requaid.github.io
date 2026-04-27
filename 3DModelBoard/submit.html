@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' blob: https://api.github.com https://uploads.github.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' blob: https://api.github.com https://uploads.github.com; img-src 'self' data: blob: https:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta name="referrer" content="no-referrer">
   <title>3D Model Board — 글쓰기</title>
   <link rel="stylesheet" href="css/style.css">
@@ -31,6 +31,29 @@
           <input type="file" id="model-input" accept=".vrm,.pmx,.pmd">
         </label>
         <div id="model-info" class="form-help" style="margin-top:8px;"></div>
+
+        <div id="bundle-section" class="bundle-section hidden">
+          <h3 style="margin:12px 0 6px;">텍스처 번들 (PMX/PMD)</h3>
+          <div class="bundle-mode">
+            <label><input type="radio" name="bundle-mode" value="none" checked> 텍스처 없이 로드 (회색)</label>
+            <label><input type="radio" name="bundle-mode" value="folder"> 폴더 업로드</label>
+            <label><input type="radio" name="bundle-mode" value="zip"> ZIP 업로드</label>
+          </div>
+          <div id="bundle-folder-field" class="hidden" style="margin-top:6px;">
+            <label class="btn-secondary" style="display:inline-block; cursor:pointer;">
+              📁 폴더 선택
+              <input type="file" id="bundle-folder" webkitdirectory directory multiple style="display:none;">
+            </label>
+          </div>
+          <div id="bundle-zip-field" class="hidden" style="margin-top:6px;">
+            <label class="btn-secondary" style="display:inline-block; cursor:pointer;">
+              🗜 ZIP 선택
+              <input type="file" id="bundle-zip" accept=".zip" style="display:none;">
+            </label>
+          </div>
+          <div id="bundle-list" class="form-help" style="margin-top:6px;"></div>
+          <div class="form-help">합계 25MB 이하 · .bmp/.png/.jpg/.tga/.dds/.spa/.sph 만 허용</div>
+        </div>
 
         <h2 style="margin-top:16px;">2. 정보</h2>
         <div class="form-field">
@@ -131,9 +154,10 @@
   <script type="importmap">
   {
     "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/",
-      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.1.0/lib/three-vrm.module.js"
+      "@babylonjs/core": "./vendor/core-entry.js",
+      "@babylonjs/loaders": "./vendor/loaders-entry.js",
+      "babylon-mmd": "./vendor/mmd-entry.js",
+      "fflate": "./vendor/fflate-entry.js"
     }
   }
   </script>

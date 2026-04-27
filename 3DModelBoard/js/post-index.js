@@ -2,6 +2,19 @@ import { CONFIG } from './config.js';
 import { localPosts } from './idb.js';
 import { isSafeImagePath, isSafeModelPath, clampText, sanitizeTags, normalizeBackground, normalizeThumbnail } from './sanitize.js';
 
+function normalizeTextureBundlePaths(raw, postId) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (const r of raw) {
+    if (typeof r !== 'string' || r.length > 200) continue;
+    if (r.includes('..') || r.startsWith('/')) continue;
+    if (!/^textures\/[A-Za-z0-9_\-./]+\.(?:bmp|png|jpg|jpeg|tga|dds|spa|sph)$/i.test(r)) continue;
+    out.push(r);
+    if (out.length >= 100) break;
+  }
+  return out;
+}
+
 function normalizeRemote(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const id = String(raw.id || '').replace(/[^A-Za-z0-9_\-]/g, '').slice(0, 64);
@@ -19,6 +32,7 @@ function normalizeRemote(raw) {
     tags: sanitizeTags(raw.tags),
     format,
     modelPath,
+    textureBundlePaths: normalizeTextureBundlePaths(raw.textureBundlePaths, id),
     thumbnail: normalizeThumbnail(raw.thumbnail),
     background: normalizeBackground(raw.background),
     createdAt: String(raw.createdAt || ''),
@@ -29,6 +43,9 @@ function normalizeLocal(raw) {
   const bgBlob = raw.backgroundBlob instanceof Blob ? raw.backgroundBlob : null;
   const bgURL = typeof raw.backgroundURL === 'string' ? raw.backgroundURL : null;
   const thumbMeta = resolveLocalThumbnail(raw);
+  const textureBundle = Array.isArray(raw.textureBundle)
+    ? raw.textureBundle.filter(t => t && t.blob instanceof Blob && typeof t.name === 'string')
+    : [];
   return {
     id: raw.id,
     source: 'local',
@@ -39,6 +56,7 @@ function normalizeLocal(raw) {
     format: raw.format,
     modelBlob: raw.modelBlob,
     modelName: raw.modelName,
+    textureBundle,
     thumbnailDataURL: raw.thumbnailDataURL || null,
     thumbnail: thumbMeta,
     backgroundBlob: bgBlob,

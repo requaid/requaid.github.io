@@ -2,14 +2,15 @@ import { CONFIG, TOKEN } from './config.js';
 import { settings } from './idb.js';
 import { saveLocal } from './post-index.js';
 import { createViewer } from './viewer-core.js';
-import { loadVRM, loadMMD } from './viewer-vrm.js';
-import { captureFromRenderer, normalizeImageFile, cropAndResizeDataURL, captureWithAspect } from './thumbnail.js';
+import { loadVRM, loadMMD } from './viewer-models.js';
+import { normalizeImageFile, cropAndResizeDataURL, captureWithAspect } from './thumbnail.js';
 import { mountHeader } from './header.js';
 import { toast, toastOk, toastError } from './ui.js';
 import { setText, getExt, isModelExt, isImageExt, checkMagicBytes, slugify, sanitizeTags, clampText, formatBytes, isValidHttpsImageURL } from './sanitize.js';
 import { submitPostPR } from './github-api.js';
 import { installErrorLog, withTimeout } from './error-log.js';
 import { showErrorModal } from './error-modal.js';
+import { unzipSync } from 'fflate';
 
 installErrorLog();
 
@@ -50,6 +51,14 @@ const bgImageInput = document.getElementById('bg-image-input');
 const bgUrlInput = document.getElementById('bg-url-input');
 const bgPreview = document.getElementById('bg-preview');
 
+const bundleSection = document.getElementById('bundle-section');
+const bundleModeRadios = document.querySelectorAll('input[name="bundle-mode"]');
+const bundleFolderField = document.getElementById('bundle-folder-field');
+const bundleZipField = document.getElementById('bundle-zip-field');
+const bundleFolderInput = document.getElementById('bundle-folder');
+const bundleZipInput = document.getElementById('bundle-zip');
+const bundleListEl = document.getElementById('bundle-list');
+
 (async () => {
   authorInput.value = (await settings.get('authorName')) || '';
 })();
@@ -67,6 +76,7 @@ let state = {
   },
   modelLoaded: false,
   bg: { mode: 'none', blob: null, ext: null, url: '', dataURL: null },
+  bundle: { mode: 'none', files: [] },
 };
 
 function log(msg, type) {
@@ -122,6 +132,10 @@ async function handleModelFile(file) {
     titleInput.value = base.slice(0, 120);
   }
 
+  const isMmd = ext === 'pmx' || ext === 'pmd';
+  if (bundleSection) bundleSection.classList.toggle('hidden', !isMmd);
+  if (!isMmd) state.bundle = { mode: 'none', files: [] };
+
   await loadIntoPreview(file);
   updateSaveButtons();
 }
@@ -140,11 +154,10 @@ async function loadIntoPreview(file) {
 
   try {
     if (state.ext === 'vrm') {
-      // VRM: Blob 직접 전달 → GLTFLoader.parse() 사용, fetch(blob:) CSP 우회
       await withTimeout(loadVRM(viewer, file), PREVIEW_LOAD_TIMEOUT_MS, '모델');
     } else {
-      // PMX/PMD: Blob 직접 전달 → fetch(blob:) CSP 우회
-      await withTimeout(loadMMD(viewer, file, { ext: state.ext }), PREVIEW_LOAD_TIMEOUT_MS, '모델');
+      const referenceFiles = bundleAsReferenceFiles();
+      await withTimeout(loadMMD(viewer, file, { ext: state.ext, referenceFiles }), PREVIEW_LOAD_TIMEOUT_MS, '모델');
     }
     state.modelLoaded = true;
     previewOverlay.classList.remove('active');
@@ -191,7 +204,7 @@ async function captureAuto() {
     aspect = 'portrait';
   }
   try {
-    const data = await captureWithAspect(state.viewer.renderer, aspect, state.viewer);
+    const data = await captureWithAspect(state.viewer, aspect);
     if (!data) return;
     state.thumb.dataURL = data;
     state.thumb.aspect = aspect;
@@ -409,6 +422,11 @@ btnSaveLocal.addEventListener('click', async () => {
   if (!state.modelLoaded || !state.file) return;
   try {
     const data = gatherPostData();
+    const textureBundle = state.bundle.files.map(f => ({
+      name: f.webkitRelativePath || f.name,
+      blob: f,
+      size: f.size,
+    }));
     await saveLocal({
       id: data.id,
       title: data.title,
@@ -418,6 +436,7 @@ btnSaveLocal.addEventListener('click', async () => {
       format: data.format,
       modelBlob: state.file,
       modelName: state.file.name,
+      textureBundle,
       thumbnailDataURL: data.thumb.dataURL || null,
       thumbnailURL: data.thumb.mode === 'url' ? data.thumb.url : null,
       thumbnailAspect: data.thumb.aspect,
@@ -451,6 +470,10 @@ btnSubmitPR.addEventListener('click', async () => {
 
   try {
     const data = gatherPostData();
+    const textureBundle = state.bundle.files.map(f => ({
+      name: f.webkitRelativePath || f.name,
+      blob: f,
+    }));
     const pr = await submitPostPR({
       postId: data.id,
       title: data.title,
@@ -460,6 +483,7 @@ btnSubmitPR.addEventListener('click', async () => {
       format: data.format,
       modelBlob: data.modelBlob,
       modelExt: data.modelExt,
+      textureBundle,
       thumb: data.thumb,
       bgBlob: data.bg.mode === 'image' ? data.bg.blob : null,
       bgExt:  data.bg.mode === 'image' ? data.bg.ext  : null,
@@ -483,5 +507,97 @@ btnSubmitPR.addEventListener('click', async () => {
     toastError('PR 생성 실패');
   } finally {
     updateSaveButtons();
+  }
+});
+
+function bundleAsReferenceFiles() {
+  return state.bundle.files;
+}
+
+function renderBundleList() {
+  if (!bundleListEl) return;
+  const files = state.bundle.files;
+  if (files.length === 0) { bundleListEl.textContent = ''; return; }
+  const total = files.reduce((s, f) => s + f.size, 0);
+  bundleListEl.textContent = `${files.length}개 파일 · ${formatBytes(total)}`;
+}
+
+function setBundleMode(mode) {
+  state.bundle.mode = mode;
+  if (bundleFolderField) bundleFolderField.classList.toggle('hidden', mode !== 'folder');
+  if (bundleZipField) bundleZipField.classList.toggle('hidden', mode !== 'zip');
+  if (mode === 'none') {
+    state.bundle.files = [];
+    renderBundleList();
+    if (state.modelLoaded && state.file) loadIntoPreview(state.file);
+  }
+}
+
+async function acceptBundleFiles(rawFiles) {
+  const out = [];
+  let total = 0;
+  for (const f of rawFiles) {
+    const ext = getExt(f.name);
+    if (!CONFIG.TEXTURE_EXT.includes(ext)) continue;
+    if (total + f.size > CONFIG.MAX_TEXTURE_BUNDLE_SIZE) {
+      toastError('텍스처 번들 크기 초과 (25MB 한도)');
+      return;
+    }
+    total += f.size;
+    out.push(f);
+  }
+  if (out.length === 0) {
+    toastError('지원하는 텍스처 파일이 없습니다');
+    return;
+  }
+  state.bundle.files = out;
+  renderBundleList();
+  toastOk(`${out.length}개 텍스처 로드`);
+  if (state.modelLoaded && state.file) await loadIntoPreview(state.file);
+}
+
+function fileFromZipEntry(name, data) {
+  const blob = new Blob([data]);
+  const f = new File([blob], name.split('/').pop(), { type: 'application/octet-stream' });
+  Object.defineProperty(f, 'webkitRelativePath', { value: name });
+  return f;
+}
+
+bundleModeRadios.forEach(r => r.addEventListener('change', () => {
+  if (!r.checked) return;
+  setBundleMode(r.value);
+}));
+
+bundleFolderInput?.addEventListener('change', async () => {
+  const files = Array.from(bundleFolderInput.files || []);
+  if (files.length === 0) return;
+  await acceptBundleFiles(files);
+});
+
+bundleZipInput?.addEventListener('change', async () => {
+  const file = bundleZipInput.files?.[0];
+  if (!file) return;
+  if (file.size > CONFIG.MAX_TEXTURE_BUNDLE_SIZE * 2) {
+    toastError('ZIP 파일이 너무 큽니다');
+    return;
+  }
+  try {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    const entries = unzipSync(buf);
+    const files = [];
+    for (const [name, data] of Object.entries(entries)) {
+      if (name.endsWith('/') || data.length === 0) continue;
+      const ext = getExt(name);
+      if (!CONFIG.TEXTURE_EXT.includes(ext)) continue;
+      files.push(fileFromZipEntry(name, data));
+    }
+    if (files.length === 0) {
+      toastError('ZIP에 텍스처 파일이 없습니다');
+      return;
+    }
+    await acceptBundleFiles(files);
+  } catch (e) {
+    console.error(e);
+    toastError('ZIP 해제 실패');
   }
 });

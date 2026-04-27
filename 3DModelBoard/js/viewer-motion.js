@@ -1,60 +1,66 @@
-import * as THREE from 'three';
 import { MOTION_BUILDERS, MOTION_LABELS } from './motion-procedural.js';
-import { restoreTpose } from './viewer-vrm.js';
+import { resetToTpose } from './viewer-models.js';
 
-export function createMotionController(ctx, { onStatusChange }) {
-  let currentAction = null;
+export function createMotionController(ctx, { onStatusChange } = {}) {
+  let currentGroup = null;
   let currentMotion = null;
+  let ownsGroup = false;
+
   const status = (msg) => { if (onStatusChange) onStatusChange(msg); };
 
   function stopCurrent() {
-    if (currentAction) { currentAction.stop(); currentAction = null; }
-    if (ctx.mixer) ctx.mixer.timeScale = 1;
-    restoreTpose(ctx);
+    if (currentGroup) {
+      try { currentGroup.stop(); } catch {}
+      if (ownsGroup) { try { currentGroup.dispose(); } catch {} }
+    }
+    currentGroup = null;
+    ownsGroup = false;
     currentMotion = null;
+    ctx.animationGroup = null;
+    resetToTpose(ctx);
   }
 
   function playBuiltIn(name) {
-    if (!ctx.mixer || !ctx.currentModel) return false;
+    if (!ctx.currentModel) return false;
     const builder = MOTION_BUILDERS[name];
     if (!builder) return false;
     stopCurrent();
-    const clip = builder(ctx);
-    if (!clip) {
+    const group = builder(ctx);
+    if (!group) {
       status('본을 찾을 수 없어 ' + (MOTION_LABELS[name] || name) + ' 적용 실패');
       return false;
     }
-    currentAction = ctx.mixer.clipAction(clip);
-    currentAction.setLoop(THREE.LoopRepeat);
-    currentAction.play();
-    ctx.mixer.timeScale = 1;
+    currentGroup = group;
+    ownsGroup = true;
+    ctx.animationGroup = group;
+    group.start(true, 1.0);
     currentMotion = name;
     status((MOTION_LABELS[name] || name) + ' 재생중');
     return true;
   }
 
-  function playClip(clip, label) {
-    if (!ctx.mixer) return false;
+  function playClip(group, label) {
+    if (!group) return false;
     stopCurrent();
-    currentAction = ctx.mixer.clipAction(clip);
-    currentAction.setLoop(THREE.LoopRepeat);
-    currentAction.play();
-    ctx.mixer.timeScale = 1;
+    currentGroup = group;
+    ownsGroup = false;
+    ctx.animationGroup = group;
+    group.start(true, 1.0);
     currentMotion = 'custom';
     status((label || '커스텀 모션') + ' 재생중');
     return true;
   }
 
   function pause() {
-    if (ctx.mixer && currentAction) {
-      ctx.mixer.timeScale = 0;
+    if (currentGroup) {
+      try { currentGroup.pause(); } catch {}
       status('일시정지');
     }
   }
 
   function resume() {
-    if (ctx.mixer && currentAction) {
-      ctx.mixer.timeScale = 1;
+    if (currentGroup) {
+      try { currentGroup.play(true); } catch {}
       if (currentMotion && MOTION_LABELS[currentMotion]) {
         status(MOTION_LABELS[currentMotion] + ' 재생중');
       }
@@ -68,7 +74,7 @@ export function createMotionController(ctx, { onStatusChange }) {
   }
 
   function getCurrent() { return currentMotion; }
-  function isPlaying() { return currentAction && ctx.mixer && ctx.mixer.timeScale > 0; }
+  function isPlaying() { return !!(currentGroup && currentGroup.isPlaying); }
 
   return { playBuiltIn, playClip, pause, resume, reset, stopCurrent, getCurrent, isPlaying };
 }

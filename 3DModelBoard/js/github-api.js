@@ -139,7 +139,7 @@ export function textToBase64(text) {
   return btoa(binary);
 }
 
-export async function submitPostPR({ postId, title, description, author, tags, format, modelBlob, modelExt, thumb, bgBlob, bgExt, bgURL, onLog }) {
+export async function submitPostPR({ postId, title, description, author, tags, format, modelBlob, modelExt, textureBundle, thumb, bgBlob, bgExt, bgURL, onLog }) {
   const log = (msg, type) => { if (onLog) onLog(msg, type || 'info'); };
 
   const cfg = await getConfig();
@@ -191,6 +191,26 @@ export async function submitPostPR({ postId, title, description, author, tags, f
     message: `post: add model for ${postId}`,
     branch: branchName,
   });
+
+  const bundlePaths = [];
+  if (Array.isArray(textureBundle) && textureBundle.length > 0) {
+    log(`텍스처 번들 업로드 (${textureBundle.length}개)...`);
+    for (const tex of textureBundle) {
+      const rel = String(tex.name || '').replace(/\\/g, '/').replace(/^\/+/, '');
+      if (!rel || rel.includes('..')) continue;
+      const safeRel = rel.replace(/[^A-Za-z0-9_\-./]/g, '_');
+      const path = postDir + 'textures/' + safeRel;
+      await putFile(login, cfg.repo, {
+        path,
+        contentBase64: await blobToBase64(tex.blob),
+        message: `post: texture ${safeRel} for ${postId}`,
+        branch: branchName,
+      });
+      bundlePaths.push('textures/' + safeRel);
+    }
+    log(`텍스처 ${bundlePaths.length}개 업로드 완료`, 'ok');
+  }
+  if (bundlePaths.length > 0) meta.textureBundlePaths = bundlePaths;
 
   if (thumbMode === 'url' && thumbSpec.url) {
     meta.thumbnail = { type: 'url', url: thumbSpec.url, aspect: thumbAspect, mode: 'url' };

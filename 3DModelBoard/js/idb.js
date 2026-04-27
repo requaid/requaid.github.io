@@ -8,12 +8,28 @@ function openDB() {
     const req = indexedDB.open(CONFIG.IDB_NAME, CONFIG.IDB_VERSION);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
+      const oldVersion = e.oldVersion || 0;
       if (!db.objectStoreNames.contains('localPosts')) {
         const store = db.createObjectStore('localPosts', { keyPath: 'id' });
         store.createIndex('createdAt', 'createdAt');
       }
       if (!db.objectStoreNames.contains('settings')) {
         db.createObjectStore('settings', { keyPath: 'key' });
+      }
+      if (oldVersion > 0 && oldVersion < 2) {
+        const tx = e.target.transaction;
+        const store = tx.objectStore('localPosts');
+        const req = store.openCursor();
+        req.onsuccess = (ev) => {
+          const cur = ev.target.result;
+          if (!cur) return;
+          const v = cur.value;
+          if (!Array.isArray(v.textureBundle)) {
+            v.textureBundle = [];
+            cur.update(v);
+          }
+          cur.continue();
+        };
       }
     };
     req.onsuccess = () => resolve(req.result);
