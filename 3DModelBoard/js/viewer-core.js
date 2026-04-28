@@ -32,7 +32,10 @@ export function createViewer({ canvas, container }) {
   camera.minZ = 0.1;
   camera.maxZ = 100;
   camera.lowerRadiusLimit = 0.5;
-  camera.upperRadiusLimit = 15;
+  // upperRadiusLimit / wheelDeltaPercentage are recomputed in centerModel based
+  // on actual model size — MMD models in native units are ~40 tall, while VRM
+  // is typically ~1.6, so a single hard limit clamps PMX/PMD into a black void.
+  camera.upperRadiusLimit = null;
   camera.upperBetaLimit = Math.PI * 0.95;
   camera.wheelDeltaPercentage = 0.02;
   camera.pinchDeltaPercentage = 0.02;
@@ -82,10 +85,37 @@ export function createViewer({ canvas, container }) {
       root.position.z -= cz;
     }
     const maxDim = Math.max(sx, sy, sz, 0.5);
+    // Adapt frustum + zoom limits to the loaded model. PMX/PMD ship in native
+    // MMD units (~40 high); VRM is typically ~1.6. A single hardcoded
+    // upperRadiusLimit clamps the camera too close on big MMD models, leaving
+    // a black canvas that looks like the load is still pending. Scale all
+    // distance-bound constants to maxDim so both formats frame correctly.
+    camera.minZ = Math.min(0.1, maxDim * 0.001);
+    camera.maxZ = Math.max(100, maxDim * 6);
+    camera.lowerRadiusLimit = Math.max(0.1, maxDim * 0.05);
+    camera.upperRadiusLimit = maxDim * 8;
+    camera.wheelDeltaPercentage = 0.02;
     camera.target = new Vector3(0, sy * 0.55, 0);
     camera.radius = maxDim * 2.2;
   }
   ctx.centerModel = centerModel;
+
+  // Bone.getAbsolutePosition() returns skeleton-local coords without a tNode;
+  // TransformNode.getAbsolutePosition() ignores extra args. Passing the model
+  // root works for both — Bone applies the world matrix, TransformNode just
+  // returns its already-computed _absolutePosition.
+  function getHumanoidBoneWorldPos(humanoidName) {
+    if (!ctx.currentModel || !ctx.humanoid) return null;
+    ctx.currentModel.computeWorldMatrix?.(true);
+    const node = ctx.humanoid.getBoneNode?.(humanoidName);
+    if (!node) return null;
+    node.computeWorldMatrix?.(true);
+    if (typeof node.getAbsolutePosition === 'function') {
+      try { return node.getAbsolutePosition(ctx.currentModel); }
+      catch (_) { return node.getAbsolutePosition(); }
+    }
+    return node.position ? node.position.clone() : null;
+  }
 
   function frameFullBody() {
     if (!ctx.currentModel) return false;
@@ -95,11 +125,32 @@ export function createViewer({ canvas, container }) {
     const sx = bi.max.x - bi.min.x;
     const sy = bi.max.y - bi.min.y;
     const sz = bi.max.z - bi.min.z;
-    const maxDim = Math.max(sx, sy, sz, 0.5);
-    camera.target = new Vector3((bi.min.x + bi.max.x) / 2, bi.min.y + sy * 0.55, (bi.min.z + bi.max.z) / 2);
-    camera.radius = maxDim * 2.2;
+    const cx = (bi.min.x + bi.max.x) / 2;
+    const cz = (bi.min.z + bi.max.z) / 2;
+
+    // Center the framing on the face when a humanoid head bone is available.
+    // The head bone sits at the rotation pivot (top of neck / base of head),
+    // which is also where a viewer naturally looks first. Models like Miku PMD
+    // have huge bbox extents from hair / twin tails that push bbox-center far
+    // above the actual face — using bbox-center alone aims the camera at empty
+    // hair space instead.
+    const headPos = getHumanoidBoneWorldPos('head');
+    const targetY = headPos && Number.isFinite(headPos.y)
+      ? headPos.y
+      : (bi.min.y + sy * 0.55);
+
+    // Distance must be large enough that both the top of the bounding box and
+    // the bottom (feet) are inside the vertical FOV with the face centered.
+    const aboveTarget = Math.max(0.01, bi.max.y - targetY);
+    const belowTarget = Math.max(0.01, targetY - bi.min.y);
+    const halfHorizontal = Math.max(sx, sz) / 2;
+    const halfNeeded = Math.max(aboveTarget, belowTarget, halfHorizontal);
+    const dist = (halfNeeded / Math.tan(camera.fov / 2)) * 1.1;
+
+    camera.target = new Vector3(cx, targetY, cz);
+    camera.radius = Math.max(dist, 0.5);
     camera.alpha = -Math.PI / 2;
-    camera.beta = Math.PI / 2.2;
+    camera.beta = Math.PI / 2;          // horizon level — face centered
     scene.render();
     return true;
   }
@@ -107,34 +158,13 @@ export function createViewer({ canvas, container }) {
 
   function frameHead() {
     if (!ctx.currentModel || !ctx.humanoid) return false;
-    // Force the entire model hierarchy to recompute world matrices first —
-    // centerModel() shifted root.position just before this call, and bones
-    // need the updated parent transform before getAbsolutePosition() returns
-    // a coordinate in current world space.
-    ctx.currentModel.computeWorldMatrix?.(true);
-    const head = ctx.humanoid.getBoneNode?.('head');
-    if (!head) return false;
-    head.computeWorldMatrix?.(true);
-    const pos = head.getAbsolutePosition?.() ?? head.position;
+    const pos = getHumanoidBoneWorldPos('head');
     if (!pos) return false;
     const bi = ctx.currentModel.getHierarchyBoundingVectors?.(true);
     const modelHeight = Math.max(0.01, (bi?.max.y ?? 1.6) - (bi?.min.y ?? 0));
-
-    // Defensive fallback: a humanoid head bone should sit comfortably in the
-    // upper half of the model. If the resolved bone reports a Y below the
-    // model's midpoint (handedness flip, mis-mapped bone, etc.), aim at the
-    // bbox top instead so the camera at least frames the actual head.
-    let targetY = pos.y;
-    if (bi && targetY < bi.min.y + modelHeight * 0.5) {
-      console.warn('[viewer] frameHead: head bone y looked invalid (y=' + pos.y.toFixed(3) +
-        ', model y range ' + bi.min.y.toFixed(3) + '..' + bi.max.y.toFixed(3) +
-        '), falling back to bbox-top.');
-      targetY = bi.min.y + modelHeight * 0.92;
-    }
-
     const headHalf = Math.max(modelHeight * 0.065, 0.08);
     const dist = (headHalf / Math.tan(camera.fov / 2)) * 1.35;
-    camera.target = new Vector3(pos.x, targetY, pos.z);
+    camera.target = pos.clone();
     camera.radius = Math.max(dist, 0.3);
     camera.alpha = -Math.PI / 2;
     camera.beta = Math.PI / 2;

@@ -47,17 +47,13 @@ export async function loadMMD(ctx, blob, { ext = 'pmx', onProgress, referenceFil
   const fileName = `model.${ext}`;
   const file = new File([blob], fileName);
 
-  // When no texture bundle is provided, suppress fetch attempts for the
-  // PMX/PMD's inline texture path table. babylon-mmd's default builder issues
-  // `scene._loadFile(rootUrl + texturePath)` per texture; rootUrl is "" for a
-  // File source, so each fetch hits the page origin (`/tex/eye.bmp` etc.) and
-  // 404s. Passing `materialBuilder: null` short-circuits that path and produces
-  // an explicit grey-mesh fallback — the documented behaviour when no bundle
-  // is supplied (see AUTHOR.md §9).
-  const mmdOptions = { referenceFiles };
-  if (referenceFiles.length === 0) {
-    mmdOptions.materialBuilder = null;
-  }
+  // Note: the babylon-mmd loader merges options as
+  //   `this.materialBuilder = options.materialBuilder ?? loaderOptions.materialBuilder`
+  // so passing `materialBuilder: null` here is a no-op (?? treats null as
+  // "missing"). When no texture bundle is supplied, the default
+  // MmdStandardMaterialBuilder still runs and emits 404s for each missing
+  // texture path. Those 404s are harmless console noise — the resolver falls
+  // through and the model finishes loading with a grey/partial-material look.
 
   const result = await ImportMeshAsync(file, ctx.scene, {
     pluginExtension: '.' + ext,
@@ -65,7 +61,7 @@ export async function loadMMD(ctx, blob, { ext = 'pmx', onProgress, referenceFil
       ? (ev) => onProgress(ev.lengthComputable ? ev.loaded / ev.total : 0)
       : undefined,
     pluginOptions: {
-      mmdmodel: mmdOptions,
+      mmdmodel: { referenceFiles },
     },
   });
 
