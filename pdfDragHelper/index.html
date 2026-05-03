@@ -262,6 +262,116 @@
   .chip-tooltip .tt-mid.is-newline { color: #6ee7b7; }
   .chip-tooltip .tt-mid.is-warn { color: var(--warn); }
   .chip-tooltip .tt-ellipsis { color: var(--muted); }
+
+  details.advanced {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  details.advanced > summary {
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    list-style: none;
+  }
+  details.advanced > summary::-webkit-details-marker { display: none; }
+  details.advanced > summary::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 10px;
+    transition: transform 0.15s;
+  }
+  details.advanced[open] > summary::before { transform: rotate(90deg); }
+  details.advanced > summary:hover { color: var(--text); }
+  .adv-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  @media (max-width: 720px) {
+    .adv-grid { grid-template-columns: 1fr; }
+  }
+  .adv-field label {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .adv-field textarea {
+    width: 100%;
+    min-height: 80px;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: "Consolas", "D2Coding", "Malgun Gothic", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .adv-field textarea:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+  .adv-hint {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .adv-hint code {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0 4px;
+    font-size: 11px;
+  }
+  .adv-actions {
+    padding: 0 14px 12px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .site-footer {
+    margin-top: 24px;
+    padding: 16px 14px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+    text-align: center;
+  }
+  .site-footer .ver {
+    display: inline-block;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: "Consolas", monospace;
+    font-size: 11px;
+    color: var(--text);
+    margin-right: 6px;
+  }
+  .site-footer .sep { margin: 0 8px; opacity: 0.5; }
+  .site-footer .author { color: var(--text); }
+  .site-footer .handle {
+    color: var(--accent);
+    font-family: "Consolas", monospace;
+  }
+  .site-footer .vibe {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    opacity: 0.8;
+  }
 </style>
 </head>
 <body>
@@ -283,9 +393,29 @@
       <label class="check"><input type="checkbox" id="opt-paragraphs" checked> 단락(빈 줄) 유지</label>
       <label class="check"><input type="checkbox" id="opt-hyphen" checked> 영문 하이픈 처리</label>
       <label class="check"><input type="checkbox" id="opt-keep-sent-nl" checked> 문장부호 끝 개행 유지</label>
+      <label class="check"><input type="checkbox" id="opt-force-sent-nl"> 문장 끝 강제 개행</label>
       <label class="check"><input type="checkbox" id="opt-pagenum" checked> 페이지 번호 제거</label>
     </div>
   </div>
+
+  <details class="advanced">
+    <summary>고급 옵션 — 단어 붙이기 미세 조정</summary>
+    <div class="adv-grid">
+      <div class="adv-field">
+        <label for="opt-compound-words">붙여 쓸 단어 (한 줄에 하나)</label>
+        <textarea id="opt-compound-words" spellcheck="false" placeholder="예: 탐사자&#10;인공지능"></textarea>
+        <p class="adv-hint">이 단어들이 줄바꿈으로 쪼개졌을 때 (예: <code>탐\n사자</code>) 자동으로 공백 없이 결합. 한 줄에 하나씩.</p>
+      </div>
+      <div class="adv-field">
+        <label for="opt-user-tails">한글 어말/조사 추가 (한 줄에 하나)</label>
+        <textarea id="opt-user-tails" spellcheck="false" placeholder="예: 으므로&#10;한다"></textarea>
+        <p class="adv-hint">자동 모드에서 이 패턴으로 끝나는 줄은 어절 경계로 간주해 공백을 삽입합니다.</p>
+      </div>
+    </div>
+    <div class="adv-actions">
+      <button class="ghost" id="btn-adv-reset">기본값 복원</button>
+    </div>
+  </details>
 
   <section class="panel">
     <div class="panel-head">
@@ -313,6 +443,14 @@
       자동 모드에서는 칩에 마우스를 올리면 앞뒤 문맥이 표시되고, 클릭하면 <code>␣</code>(공백) → <code>·</code>(공백 없음) → <code>↵</code>(개행 유지)로 순환 토글됩니다.
     </div>
   </section>
+
+  <footer class="site-footer">
+    <div>
+      <span class="ver">v1.0.0</span>
+      <span>제작 <span class="author">인국</span> <span class="handle">@10K_Lv_Rabbit</span></span>
+    </div>
+    <span class="vibe">바이브코딩(Vibe Coding)으로 작성됨</span>
+  </footer>
 </div>
 
 <script>
@@ -338,8 +476,31 @@
   const LATIN_RE = /[a-zA-Z]/;
   // 문장 종결부호 (개행 유지 후보)
   const SENT_END = /[.!?…]/;
-  // 그 외 닫는 문장부호 (괄호·따옴표 등) — 개행은 유지하지 않고 공백 처리
+  // 그 외 닫는 문장부호 (괄호·따옴표 등)
   const CLOSE_PUNCT = /[」』")\]'"]/;
+
+  // 강제 개행 시, 문장 종결부호 뒤에 이런 한글 연결어로 시작하면 개행하지 않음 (= 따옴표가 문장 일부)
+  const KO_CONTINUATION_MULTI = ['이라고','이라며','이라는','이라','이고','이며','이다','라고','라며','라는','라서','하고','하며','면서','어서'];
+  const KO_CONTINUATION_SINGLE = new Set(['이','가','은','는','을','를','에','의','와','과','도','만','로','며','고','서','나']);
+
+  /** 강제 개행 후처리: `[.!?…]["」』')]?` 뒤의 공백을 개행으로 (단 한글 연결어 뒤에는 X) */
+  function forceSentenceNewlines(text) {
+    return text.replace(
+      /([.!?…])(["」』')\]]?)([ \t]+)(\S)/g,
+      (m, end, quote, ws, nextCh, offset, full) => {
+        const afterStart = offset + end.length + quote.length + ws.length;
+        const after = full.slice(afterStart, afterStart + 5);
+        // 한글 연결어로 시작? → 개행 안 함 (따옴표가 문장 일부)
+        for (const c of KO_CONTINUATION_MULTI) {
+          if (after.startsWith(c)) return m;
+        }
+        if (KO_CONTINUATION_SINGLE.has(after.charAt(0))) return m;
+        // 영문 소문자로 시작 → 약어/문장 중간 가능성 → 개행 안 함
+        if (/[a-z]/.test(after.charAt(0))) return m;
+        return end + quote + '\n' + nextCh;
+      }
+    );
+  }
 
   /** 페이지 번호 라인 제거 (1~4자리 숫자 단독, "- N -", "N / M" 등) */
   function removePageNumbers(text) {
@@ -360,28 +521,64 @@
     return norm.split(/\n{2,}/);
   }
 
-  /** 자동 모드: 줄 끝 문맥(직전 1~3자)과 다음 문자를 보고 결정 + 모호 플래그 */
-  function decideAutoFull(beforeContext, after, options) {
+  /** 사용자 합성어 사전 매치: 좌측 컨텍스트 + 우측 컨텍스트로 단어 W = X+Y 분해 시도 */
+  function matchCompoundWord(beforeContext, afterContext, words) {
+    if (!words || !words.length) return false;
+    for (const w of words) {
+      if (w.length < 2) continue;
+      for (let split = 1; split < w.length; split++) {
+        const x = w.slice(0, split);
+        const y = w.slice(split);
+        if (beforeContext.endsWith(x) && afterContext.startsWith(y)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /** 자동 모드: 줄 끝 문맥(직전 1~3자)과 다음 문자/문맥을 보고 결정 + 모호 플래그 */
+  function decideAutoFull(beforeContext, after, afterContext, options) {
     const last = beforeContext.slice(-1);
-    // 영문 하이픈: 라틴 + '-' + \n + 라틴
+    // priority 1: 영문 하이픈
     if (options.handleHyphenation && last === '-') {
       const prev2 = beforeContext.slice(-2, -1);
       if (LATIN_RE.test(prev2) && LATIN_RE.test(after)) {
         return { decision: 'hyphen', ambiguous: false };
       }
     }
-    // 문장 종결부호 → 옵션에 따라 개행 유지 또는 공백
+    // priority 2: 사용자 합성어 사전 (어절 중간 끊김 강제 결합)
+    if (matchCompoundWord(beforeContext, afterContext, options.compoundWords)) {
+      return { decision: 'nospace', ambiguous: false };
+    }
+    // priority 3: 문장종결부호 + 닫는 따옴표/괄호 패턴 (예: ."  ?"  !」)
+    if (CLOSE_PUNCT.test(last) && SENT_END.test(beforeContext.slice(-2, -1))) {
+      return {
+        decision: options.keepSentenceNewline ? 'newline' : 'space',
+        ambiguous: false
+      };
+    }
+    // priority 4: 단순 문장종결부호
     if (SENT_END.test(last)) {
       return {
         decision: options.keepSentenceNewline ? 'newline' : 'space',
         ambiguous: false
       };
     }
+    // priority 5: 그 외 닫는 따옴표/괄호 (문장 일부) → 공백
     if (CLOSE_PUNCT.test(last)) {
       return { decision: 'space', ambiguous: false };
     }
+    // priority 6: 한글 어말/조사 매치
     if (KO_RE.test(last)) {
-      // 두 글자 이상 매치 우선
+      // 사용자 추가 어미 (긴 매치 우선)
+      const userTails = options.userTailsMulti || [];
+      for (const tail of userTails) {
+        if (tail && beforeContext.endsWith(tail)) {
+          return { decision: 'space', ambiguous: false };
+        }
+      }
+      // 빌트인 다어절
       for (const tail of KO_TAIL_MULTI) {
         if (beforeContext.endsWith(tail)) {
           return { decision: 'space', ambiguous: false };
@@ -417,7 +614,9 @@
       while (ri < paragraph.length && /[ \t]/.test(paragraph[ri])) ri++;
       const before = li >= 0 ? paragraph[li] : '';
       const after = ri < paragraph.length ? paragraph[ri] : '';
-      const beforeContext = paragraph.slice(Math.max(0, li - 2), li + 1);
+      // 합성어 매치를 위해 좌측 4자, 우측 4자 컨텍스트
+      const beforeContext = paragraph.slice(Math.max(0, li - 3), li + 1);
+      const afterContext = paragraph.slice(ri, Math.min(paragraph.length, ri + 4));
 
       let decision, ambiguous = false, isHyphen = false;
       if (mode === 'space') {
@@ -425,7 +624,7 @@
       } else if (mode === 'nospace') {
         decision = 'nospace';
       } else { // auto
-        const r = decideAutoFull(beforeContext, after, options);
+        const r = decideAutoFull(beforeContext, after, afterContext, options);
         decision = r.decision;
         ambiguous = r.ambiguous;
         if (decision === 'hyphen') isHyphen = true;
@@ -489,8 +688,28 @@
   const optParagraphs = $('opt-paragraphs');
   const optHyphen = $('opt-hyphen');
   const optKeepSentNl = $('opt-keep-sent-nl');
+  const optForceSentNl = $('opt-force-sent-nl');
   const optPagenum = $('opt-pagenum');
+  const optCompoundWords = $('opt-compound-words');
+  const optUserTails = $('opt-user-tails');
   const modeRadios = document.querySelectorAll('input[name="mode"]');
+
+  // 고급 옵션 기본값
+  const DEFAULT_COMPOUND_WORDS = ['탐사자'];
+  const DEFAULT_USER_TAILS = [];
+
+  function setCompoundWordsTextarea(words) {
+    optCompoundWords.value = words.join('\n');
+  }
+  function setUserTailsTextarea(tails) {
+    optUserTails.value = tails.join('\n');
+  }
+  setCompoundWordsTextarea(DEFAULT_COMPOUND_WORDS);
+  setUserTailsTextarea(DEFAULT_USER_TAILS);
+
+  function parseLines(text) {
+    return text.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
+  }
 
   // 호버 툴팁 (body에 한 개만 부착)
   const tooltipEl = document.createElement('div');
@@ -509,11 +728,17 @@
   }
 
   function getOptions() {
+    // 사용자 어미는 길이 내림차순으로 정렬 (긴 매치 우선)
+    const userTails = parseLines(optUserTails.value).sort((a, b) => b.length - a.length);
+    const compoundWords = parseLines(optCompoundWords.value);
     return {
       preserveParagraphs: optParagraphs.checked,
       handleHyphenation: optHyphen.checked,
       keepSentenceNewline: optKeepSentNl.checked,
-      removePageNumbers: optPagenum.checked
+      forceSentenceNewline: optForceSentNl.checked,
+      removePageNumbers: optPagenum.checked,
+      compoundWords,
+      userTailsMulti: userTails
     };
   }
 
@@ -557,7 +782,10 @@
       p.joined = applyBreaks(p.paragraph, p.breaks);
     });
 
-    const finalText = paragraphs.map(p => p.joined).join('\n\n');
+    let finalText = paragraphs.map(p => p.joined).join('\n\n');
+    if (options.forceSentenceNewline) {
+      finalText = forceSentenceNewlines(finalText);
+    }
     outputEl.value = finalText;
 
     // 칩 렌더링: 자동 모드일 때만
@@ -652,7 +880,17 @@
   optParagraphs.addEventListener('change', () => { userOverrides.clear(); render(); });
   optHyphen.addEventListener('change', () => { userOverrides.clear(); render(); });
   optKeepSentNl.addEventListener('change', () => { userOverrides.clear(); render(); });
+  optForceSentNl.addEventListener('change', () => { userOverrides.clear(); render(); });
   optPagenum.addEventListener('change', () => { userOverrides.clear(); render(); });
+  optCompoundWords.addEventListener('input', () => { userOverrides.clear(); render(); });
+  optUserTails.addEventListener('input', () => { userOverrides.clear(); render(); });
+
+  $('btn-adv-reset').addEventListener('click', () => {
+    setCompoundWordsTextarea(DEFAULT_COMPOUND_WORDS);
+    setUserTailsTextarea(DEFAULT_USER_TAILS);
+    userOverrides.clear();
+    render();
+  });
 
   $('btn-clear-input').addEventListener('click', () => {
     inputEl.value = '';
@@ -682,7 +920,10 @@
     optParagraphs.checked = true;
     optHyphen.checked = true;
     optKeepSentNl.checked = true;
+    optForceSentNl.checked = false;
     optPagenum.checked = true;
+    setCompoundWordsTextarea(DEFAULT_COMPOUND_WORDS);
+    setUserTailsTextarea(DEFAULT_USER_TAILS);
     tooltipEl.style.display = 'none';
     inputEl.focus();
   });
