@@ -351,9 +351,11 @@
     return t;
   }
 
-  /** 단락 분리: 두 번 이상의 연속 개행을 단락 경계로 */
+  /** 단락 분리: 두 번 이상의 연속 개행을 단락 경계로
+   *  PDF 복사본은 "빈 줄"에 공백/탭이 들어있는 경우가 많아, 라인 끝 공백을 먼저 제거한다. */
   function splitParagraphs(text, preserveParagraphs) {
-    const norm = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    let norm = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    norm = norm.replace(/[ \t]+$/gm, '');
     if (!preserveParagraphs) return [norm];
     return norm.split(/\n{2,}/);
   }
