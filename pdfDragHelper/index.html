@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>PDF 줄바꿈 복원 도구</title>
+<style>
+  :root {
+    --bg: #1e1f22;
+    --panel: #2b2d31;
+    --panel-2: #313338;
+    --border: #3f4147;
+    --text: #dbdee1;
+    --muted: #949ba4;
+    --accent: #5865f2;
+    --accent-hover: #4752c4;
+    --warn: #f0b232;
+    --warn-bg: #4a3a14;
+    --good: #23a559;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+  }
+  header {
+    margin-bottom: 16px;
+  }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+  }
+  .opt-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .opt-group strong {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 4px;
+  }
+  label.radio, label.check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  label.radio input, label.check input {
+    accent-color: var(--accent);
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-head h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .panel-head .actions {
+    display: flex;
+    gap: 8px;
+  }
+  textarea {
+    display: block;
+    width: 100%;
+    min-height: 180px;
+    background: var(--panel);
+    color: var(--text);
+    border: none;
+    outline: none;
+    resize: vertical;
+    padding: 12px 14px;
+    font-family: "Consolas", "D2Coding", "Cascadia Code", "Malgun Gothic", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  textarea::placeholder {
+    color: var(--muted);
+  }
+  textarea[readonly] {
+    background: #26272b;
+  }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  button:hover { background: var(--accent-hover); }
+  button.ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  button.ghost:hover {
+    background: var(--panel-2);
+    color: var(--text);
+  }
+  button.toast-success { background: var(--good); }
+
+  .chips {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: #26272b;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 6px;
+    height: 110px;
+    min-height: 44px;
+    max-height: 600px;
+    overflow-y: auto;
+    resize: vertical;
+  }
+  .chips:empty { display: none; }
+  .chips .chips-label {
+    color: var(--muted);
+    font-size: 12px;
+    margin-right: 8px;
+    align-self: center;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: "Consolas", monospace;
+    user-select: none;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .chip:hover {
+    background: #3a3c42;
+    border-color: var(--muted);
+  }
+  .chip.ambiguous {
+    border-color: var(--warn);
+    background: var(--warn-bg);
+    color: #ffe5a8;
+  }
+  .chip .ctx-before, .chip .ctx-after {
+    color: var(--muted);
+  }
+  .chip.ambiguous .ctx-before, .chip.ambiguous .ctx-after {
+    color: #d6b87a;
+  }
+  .chip .glyph {
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 12px;
+    text-align: center;
+  }
+  .chip.ambiguous .glyph { color: var(--warn); }
+
+  .footnote {
+    color: var(--muted);
+    font-size: 12px;
+    padding: 8px 14px;
+    border-top: 1px solid var(--border);
+    background: #26272b;
+  }
+  .footnote .legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 12px;
+  }
+  .legend-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--warn);
+  }
+
+  .chip-tooltip {
+    position: fixed;
+    z-index: 1000;
+    background: #15161a;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: "Consolas", "D2Coding", "Malgun Gothic", monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    max-width: 520px;
+    min-width: 180px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    pointer-events: none;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .chip-tooltip .tt-label {
+    color: var(--muted);
+    font-size: 11px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+  }
+  .chip-tooltip .tt-pre,
+  .chip-tooltip .tt-post { color: var(--text); }
+  .chip-tooltip .tt-mid {
+    color: var(--accent);
+    font-weight: 700;
+    padding: 0 4px;
+  }
+  .chip-tooltip .tt-mid.is-newline { color: #6ee7b7; }
+  .chip-tooltip .tt-mid.is-warn { color: var(--warn); }
+  .chip-tooltip .tt-ellipsis { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>PDF 줄바꿈 복원 도구</h1>
+    <p>PDF에서 복사한 텍스트의 줄바꿈을 자연스럽게 정리합니다. 자동 모드는 어절 경계는 공백으로, 어절 중간 끊김은 그대로 이어붙이려고 시도합니다.</p>
+  </header>
+
+  <div class="options">
+    <div class="opt-group">
+      <strong>모드</strong>
+      <label class="radio"><input type="radio" name="mode" value="auto" checked> 자동</label>
+      <label class="radio"><input type="radio" name="mode" value="space"> 항상 공백 삽입</label>
+      <label class="radio"><input type="radio" name="mode" value="nospace"> 공백 없이 연결</label>
+    </div>
+    <div class="opt-group">
+      <strong>옵션</strong>
+      <label class="check"><input type="checkbox" id="opt-paragraphs" checked> 단락(빈 줄) 유지</label>
+      <label class="check"><input type="checkbox" id="opt-hyphen" checked> 영문 하이픈 처리</label>
+      <label class="check"><input type="checkbox" id="opt-keep-sent-nl" checked> 문장부호 끝 개행 유지</label>
+      <label class="check"><input type="checkbox" id="opt-pagenum" checked> 페이지 번호 제거</label>
+    </div>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>입력</h2>
+      <div class="actions">
+        <button class="ghost" id="btn-paste">붙여넣기</button>
+        <button class="ghost" id="btn-clear-input">지우기</button>
+      </div>
+    </div>
+    <textarea id="input" placeholder="PDF에서 복사한 텍스트를 여기에 붙여넣으세요..." spellcheck="false"></textarea>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>결과</h2>
+      <div class="actions">
+        <button id="btn-copy">결과 복사</button>
+        <button class="ghost" id="btn-reset">초기화</button>
+      </div>
+    </div>
+    <div id="chips" class="chips" aria-label="줄 이음 지점 토글"></div>
+    <textarea id="output" readonly placeholder="변환된 결과가 여기에 표시됩니다." spellcheck="false"></textarea>
+    <div class="footnote">
+      <span class="legend"><span class="legend-swatch"></span> 노랑: 자동 판별이 모호한 지점</span>
+      자동 모드에서는 칩에 마우스를 올리면 앞뒤 문맥이 표시되고, 클릭하면 <code>␣</code>(공백) → <code>·</code>(공백 없음) → <code>↵</code>(개행 유지)로 순환 토글됩니다.
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ── 한글 어말/조사 패턴 (자동 모드 priority 3) ──────────────
+  // 두 글자 이상 매치 (긴 것을 먼저)
+  const KO_TAIL_MULTI = [
+    '으로서','으로써',
+    '으로','에서','까지','부터','에게','한테',
+    '이며','하고','하며','하여','면서','라서','어서','거나'
+  ];
+  // 한 글자 종결/조사
+  const KO_TAIL_SINGLE = new Set([
+    // 종결
+    '다','요','죠','까','네','군','임','함','음','슴','라','자','야','어','지',
+    // 조사
+    '은','는','이','가','을','를','에','의','와','과','도','만','로','며','고','서'
+  ]);
+
+  const KO_RE = /[가-힯]/;
+  const LATIN_RE = /[a-zA-Z]/;
+  // 문장 종결부호 (개행 유지 후보)
+  const SENT_END = /[.!?…]/;
+  // 그 외 닫는 문장부호 (괄호·따옴표 등) — 개행은 유지하지 않고 공백 처리
+  const CLOSE_PUNCT = /[」』")\]'"]/;
+
+  /** 페이지 번호 라인 제거 (1~4자리 숫자 단독, "- N -", "N / M" 등) */
+  function removePageNumbers(text) {
+    let t = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    t = t.replace(/^[ \t]*\d{1,4}[ \t]*$\n?/gm, '');
+    t = t.replace(/^[ \t]*-\s*\d{1,4}\s*-[ \t]*$\n?/gm, '');
+    t = t.replace(/^[ \t]*\d{1,4}\s*\/\s*\d{1,4}[ \t]*$\n?/gm, '');
+    t = t.replace(/^[ \t]*[Pp](?:age)?\.?\s*\d{1,4}(?:\s*\/\s*\d{1,4})?[ \t]*$\n?/gm, '');
+    return t;
+  }
+
+  /** 단락 분리: 두 번 이상의 연속 개행을 단락 경계로 */
+  function splitParagraphs(text, preserveParagraphs) {
+    const norm = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    if (!preserveParagraphs) return [norm];
+    return norm.split(/\n{2,}/);
+  }
+
+  /** 자동 모드: 줄 끝 문맥(직전 1~3자)과 다음 문자를 보고 결정 + 모호 플래그 */
+  function decideAutoFull(beforeContext, after, options) {
+    const last = beforeContext.slice(-1);
+    // 영문 하이픈: 라틴 + '-' + \n + 라틴
+    if (options.handleHyphenation && last === '-') {
+      const prev2 = beforeContext.slice(-2, -1);
+      if (LATIN_RE.test(prev2) && LATIN_RE.test(after)) {
+        return { decision: 'hyphen', ambiguous: false };
+      }
+    }
+    // 문장 종결부호 → 옵션에 따라 개행 유지 또는 공백
+    if (SENT_END.test(last)) {
+      return {
+        decision: options.keepSentenceNewline ? 'newline' : 'space',
+        ambiguous: false
+      };
+    }
+    if (CLOSE_PUNCT.test(last)) {
+      return { decision: 'space', ambiguous: false };
+    }
+    if (KO_RE.test(last)) {
+      // 두 글자 이상 매치 우선
+      for (const tail of KO_TAIL_MULTI) {
+        if (beforeContext.endsWith(tail)) {
+          return { decision: 'space', ambiguous: false };
+        }
+      }
+      if (KO_TAIL_SINGLE.has(last)) {
+        return { decision: 'space', ambiguous: false };
+      }
+      // 한글-한글, 위 규칙 미적용 → 모호
+      if (KO_RE.test(after)) {
+        return { decision: 'space', ambiguous: true };
+      }
+    }
+    if (LATIN_RE.test(last) && LATIN_RE.test(after)) {
+      return { decision: 'space', ambiguous: false };
+    }
+    return { decision: 'space', ambiguous: false };
+  }
+
+  /**
+   * 단락 내부의 \n에 대한 결정 배열 산출.
+   * 반환: { breaks: [{index, before, after, decision, ambiguous}], }
+   * index는 원본 paragraph 내 \n 위치
+   */
+  function computeBreaks(paragraph, mode, options) {
+    const breaks = [];
+    for (let i = 0; i < paragraph.length; i++) {
+      if (paragraph[i] !== '\n') continue;
+      // 좌우 비공백 1글자 (공백/탭 건너뛰고)
+      let li = i - 1;
+      while (li >= 0 && /[ \t]/.test(paragraph[li])) li--;
+      let ri = i + 1;
+      while (ri < paragraph.length && /[ \t]/.test(paragraph[ri])) ri++;
+      const before = li >= 0 ? paragraph[li] : '';
+      const after = ri < paragraph.length ? paragraph[ri] : '';
+      const beforeContext = paragraph.slice(Math.max(0, li - 2), li + 1);
+
+      let decision, ambiguous = false, isHyphen = false;
+      if (mode === 'space') {
+        decision = 'space';
+      } else if (mode === 'nospace') {
+        decision = 'nospace';
+      } else { // auto
+        const r = decideAutoFull(beforeContext, after, options);
+        decision = r.decision;
+        ambiguous = r.ambiguous;
+        if (decision === 'hyphen') isHyphen = true;
+      }
+      breaks.push({ index: i, before, after, decision, ambiguous, isHyphen });
+    }
+    return breaks;
+  }
+
+  /** 결정 배열을 적용해 단락 한 줄 만들기 */
+  function applyBreaks(paragraph, breaks) {
+    if (breaks.length === 0) return paragraph;
+    // 분할 후 다시 join
+    let out = '';
+    let cursor = 0;
+    for (const br of breaks) {
+      // [cursor, br.index) 텍스트 + 결정에 따른 연결자
+      let chunk = paragraph.slice(cursor, br.index);
+      // 다음 청크 시작 (br.index + 1 이후의 leading whitespace 건너뛰기)
+      let nextStart = br.index + 1;
+      while (nextStart < paragraph.length && /[ \t]/.test(paragraph[nextStart])) nextStart++;
+      // chunk 끝의 trailing whitespace 제거
+      chunk = chunk.replace(/[ \t]+$/, '');
+
+      if (br.isHyphen) {
+        chunk = chunk.replace(/-$/, '');
+      }
+      if (br.decision === 'newline') {
+        out += chunk + '\n';
+      } else if (br.decision === 'hyphen' || br.decision === 'nospace') {
+        out += chunk;
+      } else { // space
+        out += chunk + ' ';
+      }
+      cursor = nextStart;
+    }
+    out += paragraph.slice(cursor);
+    // 다중 공백 정리
+    out = out.replace(/ {2,}/g, ' ');
+    return out;
+  }
+
+  /** 메인 변환 함수 */
+  function convert(text, mode, options) {
+    let pre = text;
+    if (options.removePageNumbers) pre = removePageNumbers(pre);
+    const paragraphs = splitParagraphs(pre, options.preserveParagraphs);
+    const result = paragraphs.map(p => {
+      const breaks = computeBreaks(p, mode, options);
+      return { joined: applyBreaks(p, breaks), breaks, paragraph: p };
+    });
+    const joinedText = result.map(r => r.joined).join('\n\n');
+    return { joinedText, paragraphs: result };
+  }
+
+  // ── DOM ─────────────────────────────────────────
+  const $ = (id) => document.getElementById(id);
+  const inputEl = $('input');
+  const outputEl = $('output');
+  const chipsEl = $('chips');
+  const optParagraphs = $('opt-paragraphs');
+  const optHyphen = $('opt-hyphen');
+  const optKeepSentNl = $('opt-keep-sent-nl');
+  const optPagenum = $('opt-pagenum');
+  const modeRadios = document.querySelectorAll('input[name="mode"]');
+
+  // 호버 툴팁 (body에 한 개만 부착)
+  const tooltipEl = document.createElement('div');
+  tooltipEl.className = 'chip-tooltip';
+  tooltipEl.style.display = 'none';
+  document.body.appendChild(tooltipEl);
+
+  // 사용자 보정 결정 캐시: 단락 인덱스 + break 인덱스 → 결정값
+  // 입력/모드/옵션 변경 시 초기화
+  let userOverrides = new Map();
+  let lastInputSnapshot = '';
+
+  function getMode() {
+    for (const r of modeRadios) if (r.checked) return r.value;
+    return 'auto';
+  }
+
+  function getOptions() {
+    return {
+      preserveParagraphs: optParagraphs.checked,
+      handleHyphenation: optHyphen.checked,
+      keepSentenceNewline: optKeepSentNl.checked,
+      removePageNumbers: optPagenum.checked
+    };
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function decisionGlyph(decision) {
+    if (decision === 'newline') return '↵';
+    if (decision === 'space') return '␣';
+    return '·'; // nospace 또는 hyphen
+  }
+
+  function decisionLabel(decision) {
+    if (decision === 'newline') return '개행 유지';
+    if (decision === 'space') return '공백 삽입';
+    if (decision === 'hyphen') return '하이픈 제거 + 공백 없음';
+    return '공백 없음';
+  }
+
+  function render() {
+    const text = inputEl.value;
+    if (text !== lastInputSnapshot) {
+      userOverrides.clear();
+      lastInputSnapshot = text;
+    }
+    const mode = getMode();
+    const options = getOptions();
+    const { paragraphs } = convert(text, mode, options);
+
+    // 사용자 override 적용
+    paragraphs.forEach((p, pIdx) => {
+      p.breaks.forEach((br, bIdx) => {
+        const key = `${pIdx}:${bIdx}`;
+        if (userOverrides.has(key)) {
+          br.decision = userOverrides.get(key);
+        }
+      });
+      p.joined = applyBreaks(p.paragraph, p.breaks);
+    });
+
+    const finalText = paragraphs.map(p => p.joined).join('\n\n');
+    outputEl.value = finalText;
+
+    // 칩 렌더링: 자동 모드일 때만
+    chipsEl.innerHTML = '';
+    if (mode !== 'auto') return;
+
+    const totalBreaks = paragraphs.reduce((s, p) => s + p.breaks.length, 0);
+    if (totalBreaks === 0) return;
+
+    const label = document.createElement('span');
+    label.className = 'chips-label';
+    label.textContent = `줄 이음 ${totalBreaks}개:`;
+    chipsEl.appendChild(label);
+
+    const CYCLE = ['space', 'nospace', 'newline'];
+    const CTX_LEN = 30;
+
+    paragraphs.forEach((p, pIdx) => {
+      p.breaks.forEach((br, bIdx) => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        if (br.ambiguous) chip.classList.add('ambiguous');
+        const before = br.before || '∅';
+        const after = br.after || '∅';
+        const glyph = decisionGlyph(br.decision);
+        chip.innerHTML = `<span class="ctx-before"></span><span class="glyph"></span><span class="ctx-after"></span>`;
+        chip.querySelector('.ctx-before').textContent = before;
+        chip.querySelector('.glyph').textContent = glyph;
+        chip.querySelector('.ctx-after').textContent = after;
+
+        // 호버 툴팁용 앞뒤 맥락
+        const preStart = Math.max(0, br.index - CTX_LEN);
+        const postEnd = Math.min(p.paragraph.length, br.index + 1 + CTX_LEN);
+        const preText = p.paragraph.slice(preStart, br.index).replace(/\n/g, '↵');
+        const postText = p.paragraph.slice(br.index + 1, postEnd).replace(/\n/g, '↵');
+        const preEllipsis = preStart > 0;
+        const postEllipsis = postEnd < p.paragraph.length;
+
+        chip.addEventListener('mouseenter', () => {
+          const dec = br.decision;
+          const midClass = dec === 'newline' ? 'is-newline'
+                         : br.ambiguous ? 'is-warn' : '';
+          const midText = decisionGlyph(dec);
+          tooltipEl.innerHTML =
+            `<div class="tt-label">${escapeHtml(decisionLabel(dec))}${br.ambiguous ? ' · 모호한 지점' : ''}</div>` +
+            `<div>` +
+            (preEllipsis ? `<span class="tt-ellipsis">…</span>` : '') +
+            `<span class="tt-pre">${escapeHtml(preText)}</span>` +
+            `<span class="tt-mid ${midClass}">${escapeHtml(midText)}</span>` +
+            `<span class="tt-post">${escapeHtml(postText)}</span>` +
+            (postEllipsis ? `<span class="tt-ellipsis">…</span>` : '') +
+            `</div>`;
+          tooltipEl.style.display = 'block';
+
+          const rect = chip.getBoundingClientRect();
+          const ttRect = tooltipEl.getBoundingClientRect();
+          let left = rect.left + rect.width / 2 - ttRect.width / 2;
+          left = Math.max(8, Math.min(window.innerWidth - ttRect.width - 8, left));
+          let top = rect.bottom + 6;
+          if (top + ttRect.height > window.innerHeight - 8) {
+            top = rect.top - ttRect.height - 6;
+          }
+          tooltipEl.style.left = `${left}px`;
+          tooltipEl.style.top = `${top}px`;
+        });
+        chip.addEventListener('mouseleave', () => {
+          tooltipEl.style.display = 'none';
+        });
+
+        chip.addEventListener('click', () => {
+          const key = `${pIdx}:${bIdx}`;
+          const current = userOverrides.get(key) ?? br.decision;
+          // hyphen은 cycle에 없으므로 'nospace'로 정규화 후 다음 단계로
+          const normalized = (current === 'hyphen') ? 'nospace' : current;
+          const idx = CYCLE.indexOf(normalized);
+          const next = CYCLE[(idx + 1) % CYCLE.length];
+          userOverrides.set(key, next);
+          tooltipEl.style.display = 'none';
+          render();
+        });
+        chipsEl.appendChild(chip);
+      });
+    });
+  }
+
+  // ── 이벤트 ──────────────────────────────────────
+  inputEl.addEventListener('input', render);
+  modeRadios.forEach(r => r.addEventListener('change', () => {
+    userOverrides.clear();
+    render();
+  }));
+  optParagraphs.addEventListener('change', () => { userOverrides.clear(); render(); });
+  optHyphen.addEventListener('change', () => { userOverrides.clear(); render(); });
+  optKeepSentNl.addEventListener('change', () => { userOverrides.clear(); render(); });
+  optPagenum.addEventListener('change', () => { userOverrides.clear(); render(); });
+
+  $('btn-clear-input').addEventListener('click', () => {
+    inputEl.value = '';
+    userOverrides.clear();
+    render();
+    inputEl.focus();
+  });
+
+  $('btn-paste').addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      inputEl.value = text;
+      userOverrides.clear();
+      render();
+    } catch (e) {
+      alert('클립보드 읽기에 실패했습니다. 직접 붙여넣어 주세요.');
+    }
+  });
+
+  $('btn-reset').addEventListener('click', () => {
+    inputEl.value = '';
+    outputEl.value = '';
+    chipsEl.innerHTML = '';
+    userOverrides.clear();
+    lastInputSnapshot = '';
+    document.querySelector('input[name="mode"][value="auto"]').checked = true;
+    optParagraphs.checked = true;
+    optHyphen.checked = true;
+    optKeepSentNl.checked = true;
+    optPagenum.checked = true;
+    tooltipEl.style.display = 'none';
+    inputEl.focus();
+  });
+
+  const copyBtn = $('btn-copy');
+  copyBtn.addEventListener('click', async () => {
+    const text = outputEl.value;
+    if (!text) return;
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch (e) {
+      // 폴백
+      try {
+        outputEl.removeAttribute('readonly');
+        outputEl.select();
+        ok = document.execCommand('copy');
+        outputEl.setAttribute('readonly', '');
+        outputEl.blur();
+      } catch (e2) {
+        ok = false;
+      }
+    }
+    if (ok) {
+      const original = copyBtn.textContent;
+      copyBtn.textContent = '복사됨!';
+      copyBtn.classList.add('toast-success');
+      setTimeout(() => {
+        copyBtn.textContent = original;
+        copyBtn.classList.remove('toast-success');
+      }, 1200);
+    } else {
+      alert('복사에 실패했습니다.');
+    }
+  });
+
+  // 초기 렌더 (빈 상태)
+  render();
+})();
+</script>
+</body>
+</html>
